@@ -22,6 +22,9 @@ form{display:flex;gap:9px;margin:22px 0 0}
 input{flex:1;padding:10px 13px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
 button{padding:10px 20px;border:0;border-radius:8px;background:var(--fg);color:var(--bg);font:inherit;font-weight:600;cursor:pointer}
 .err{color:#b91c1c;font-size:14px;margin:14px 0 0}
+a{color:var(--accent)}
+.btn{display:inline-block;padding:11px 22px;border-radius:8px;background:var(--fg);color:var(--bg);
+ text-decoration:none;font-weight:600}
 @media (prefers-color-scheme:dark){.err{color:#f87171}}
 `;
 
@@ -32,19 +35,36 @@ function shell(title, body) {
 </head><body><div class="wrap">${body}</div></body></html>`;
 }
 
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function landing(info) {
+  const u = info.user;
   return shell('MMRS', `
 <h1>MMRS</h1>
 <p class="sub">mmrs.edgestudios.co.za — <span class="pill">scaffold</span></p>
+
+${u ? `<div class="card">
+  <h2>Signed in</h2>
+  <dl>
+    <dt>Name</dt><dd>${esc(u.name)}</dd>
+    ${u.email ? `<dt>Email</dt><dd>${esc(u.email)}</dd>` : ''}
+    ${u.groups && u.groups.length ? `<dt>Groups</dt><dd>${esc(u.groups.join(', '))}</dd>` : ''}
+  </dl>
+  <p style="margin:16px 0 0"><a href="/auth/logout">Sign out</a></p>
+</div>` : ''}
 
 <div class="card">
   <h2>Service</h2>
   <dl>
     <dt>Status</dt><dd>running</dd>
-    <dt>Version</dt><dd><code>${info.version}</code></dd>
-    <dt>Commit</dt><dd><code>${info.commit}</code></dd>
-    <dt>Started</dt><dd>${info.started}</dd>
-    <dt>Uptime</dt><dd>${info.uptime}</dd>
+    <dt>Auth</dt><dd>${esc(info.auth)}</dd>
+    <dt>Version</dt><dd><code>${esc(info.version)}</code></dd>
+    <dt>Commit</dt><dd><code>${esc(info.commit)}</code></dd>
+    <dt>Started</dt><dd>${esc(info.started)}</dd>
+    <dt>Uptime</dt><dd>${esc(info.uptime)}</dd>
     <dt>Node</dt><dd>${process.version}</dd>
   </dl>
 </div>
@@ -87,4 +107,28 @@ function unconfigured() {
 </div>`);
 }
 
-module.exports = { landing, locked, unconfigured };
+function signin(opts = {}) {
+  const href = opts.returnTo
+    ? `/auth/login?returnTo=${encodeURIComponent(opts.returnTo)}`
+    : '/auth/login';
+  return shell('MMRS — sign in', `
+<h1>MMRS</h1>
+<p class="sub">Sign in to continue.</p>
+<div class="card">
+  <p style="margin:0 0 18px">This service uses your EdgeStudios identity.</p>
+  <p style="margin:0"><a class="btn" href="${href}">Sign in with Pocket-ID</a></p>
+  ${opts.error ? `<p class="err">${esc(opts.error)}</p>` : ''}
+</div>`);
+}
+
+function notFound(user) {
+  return shell('MMRS — not found', `
+<h1>MMRS</h1>
+<p class="sub">Nothing here.</p>
+<div class="card">
+  <p style="margin:0">That path does not exist.
+  <a href="/">Back to the landing page</a>.</p>
+</div>`);
+}
+
+module.exports = { landing, locked, unconfigured, signin, notFound };
