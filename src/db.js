@@ -132,6 +132,20 @@ CREATE TABLE IF NOT EXISTS runs (
   note        TEXT
 );
 
+-- Worker event log. The container's stdout is ephemeral and only reachable
+-- through the Coolify API, so anything worth looking at later lives here.
+CREATE TABLE IF NOT EXISTS events (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  import_id TEXT,
+  ts        TEXT NOT NULL,
+  level     TEXT NOT NULL,          -- info|warn|error
+  event     TEXT NOT NULL,          -- run_start|claim|extracted|failed|quota|run_stop|...
+  family    TEXT,
+  detail    TEXT,
+  ms        INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_events_ts ON events(id DESC);
+
 CREATE INDEX IF NOT EXISTS idx_find_family ON findings(import_id, family);
 CREATE INDEX IF NOT EXISTS idx_mark_family ON markers(import_id, family);
 CREATE INDEX IF NOT EXISTS idx_find_type   ON findings(import_id, type);
@@ -333,8 +347,33 @@ const releaseStale = (importId) =>
   q(`UPDATE work_queue SET status='pending', claimed_at=NULL
      WHERE import_id=? AND status='running'`).run(importId).changes;
 
+/* ---------- events ---------- */
+
+function logEvent(importId, level, event, { family, detail, ms } = {}) {
+  try {
+    q(`INSERT INTO events (import_id, ts, level, event, family, detail, ms)
+       VALUES (?,?,?,?,?,?,?)`).run(importId || null, now(), level, event,
+      family || null, detail == null ? null : String(detail).slice(0, 4000), ms == null ? null : ms);
+  } catch (e) { console.error('[db] logEvent failed:', e.message); }
+}
+
+const listEvents = ({ importId, level, limit = 300, sinceId = 0 } = {}) => {
+  const where = ['id > ?']; const args = [sinceId];
+  if (importId) { where.push('import_id = ?'); args.push(importId); }
+  if (level && level !== 'all') {
+    if (level === 'problems') where.push("level IN ('warn','error')");
+    else { where.push('level = ?'); args.push(level); }
+  }
+  args.push(limit);
+  return q(`SELECT * FROM events WHERE ${where.join(' AND ')} ORDER BY id DESC LIMIT ?`).all(...args);
+};
+
+const eventCounts = (importId) =>
+  q(`SELECT level, COUNT(*) AS n FROM events WHERE import_id = ? GROUP BY level`).all(importId);
+
 module.exports = {
   open, q, now, DB_PATH, DATA_DIR,
+  logEvent, listEvents, eventCounts,
   claimNext, saveExtraction, releaseFamily, failFamily, releaseStale,
   extractionProgress, findingsSummary, recentExtractions, totals,
   startRun, stopRun, activeRun,

@@ -149,6 +149,23 @@ td.c-msgs{color:var(--ink-2)}
 .chip{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.03em;padding:1px 6px;
 border-radius:4px;background:var(--accent-soft);color:var(--accent);vertical-align:1px;margin-left:5px}
 .chip.early{background:var(--done-soft);color:var(--done)}
+.tabs{display:flex;gap:4px}
+.tab{padding:6px 12px;border-radius:7px;font-size:13px;color:var(--ink-2);text-decoration:none}
+.tab:hover{background:var(--panel-2);color:var(--ink)}
+.tab.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.logtable{font-size:13px;table-layout:fixed;min-width:900px}
+.logtable td{vertical-align:top;padding-right:14px}
+.evts{width:150px;color:var(--ink-3);font-size:12px}
+.evname{width:96px;color:var(--ink-2)}
+.evfam{width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.evdetail{font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5;word-break:break-word}
+.lvl{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:2px 6px;
+border-radius:4px;background:var(--done-soft);color:var(--done)}
+.lvl.warn{background:var(--wait-soft);color:var(--wait)}
+.lvl.error{background:var(--fail-soft);color:var(--fail)}
+tr.ev.err td{background:color-mix(in srgb,var(--fail) 6%,transparent)}
+tr.ev.warn td{background:color-mix(in srgb,var(--wait) 6%,transparent)}
+label.count{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 tr.fam td:first-child a{text-decoration:none;font-weight:500;color:var(--ink)}
 tr.fam td:first-child a:hover{color:var(--accent)}
 .era{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;
@@ -212,6 +229,7 @@ function frame(active, current, body) {
 <nav>
   <a href="/" ${active === 'dash' ? 'aria-current="page"' : ''}>Dashboard</a>
   <a href="/families" ${active === 'browse' ? 'aria-current="page"' : ''}>Archive</a>
+  <a href="/logs" ${active === 'logs' ? 'aria-current="page"' : ''}>Worker log</a>
   <a href="/import" ${active === 'import' ? 'aria-current="page"' : ''}>Import</a>
 </nav>
 <div class="spine"><h3>Pipeline</h3>
@@ -281,8 +299,14 @@ Extraction is the only stage that needs a Claude credential.</p></div></div>`;
 
   return `<div class="card" style="margin-top:14px" id="runcard">
 <div class="card-h"><h2>Extraction</h2><div style="display:flex;gap:9px;align-items:center">${st}
-<form method="POST" action="/api/run/${w.running ? 'stop' : 'start'}" style="display:inline">
-<button class="btn ${w.running ? 'ghost' : ''} sm" type="submit">${w.running ? 'Stop after this one' : 'Start extraction'}</button></form>
+${w.running
+  ? `<form method="POST" action="/api/run/stop" style="display:inline">
+     <button class="btn ghost sm" type="submit">${w.current ? `Stop after &ldquo;${esc(w.current.slice(0, 28))}${w.current.length > 28 ? '…' : ''}&rdquo;` : 'Stop'}</button></form>`
+  : `<form method="POST" action="/api/run/start?limit=5" style="display:inline">
+     <button class="btn ghost sm" type="submit">Test 5</button></form>
+     <form method="POST" action="/api/run/start" style="display:inline">
+     <button class="btn sm" type="submit">Start full run</button></form>`}
+<a class="btn ghost sm" href="/logs">Log</a>
 </div></div><div class="card-b">
 <div class="bigbar">
 <i class="s-done" style="width:${pct(doneN)}%"></i>
@@ -637,10 +661,57 @@ nothing is repeated, and nothing is lost.</p></div></div>` : ''}
   return shell(`MMRS — ${family}`, frame('browse', {}, body));
 }
 
+const LEVEL_CLS = { info: '', warn: 'warn', error: 'err' };
+
+function logsPage({ events, counts, worker, level, importId }) {
+  const rows = events.map((e) => `<tr class="ev ${LEVEL_CLS[e.level] || ''}">
+<td class="n evts">${esc(e.ts.replace('T', ' ').replace('Z', ''))}</td>
+<td><span class="lvl ${esc(e.level)}">${esc(e.level)}</span></td>
+<td class="evname">${esc(e.event)}</td>
+<td class="evfam">${e.family ? `<a href="/family/${encodeURIComponent(e.family)}">${esc(e.family)}</a>` : ''}</td>
+<td class="evdetail">${esc(e.detail || '')}</td>
+<td class="n">${e.ms == null ? '' : Math.round(e.ms / 1000) + 's'}</td>
+</tr>`).join('');
+
+  const c = Object.fromEntries((counts || []).map((x) => [x.level, x.n]));
+  const tab = (k, label) => `<a class="tab ${level === k ? 'on' : ''}" href="/logs?level=${k}">${label}</a>`;
+
+  const body = `<div class="topbar">
+<div><h1>Worker log</h1><p class="sub">Everything the extractor has done, newest first. Survives restarts.</p></div>
+<div class="spacer"></div>
+${worker.running ? `<span class="pill ok"><span class="beacon"></span>${worker.pausedUntil ? 'Paused' : 'Running'}</span>`
+  : '<span class="pill idle">Idle</span>'}
+<a class="btn ghost sm" href="/">Dashboard</a></div>
+
+<div class="toolbar">
+  <div class="tabs">${tab('all', `All ${n((c.info || 0) + (c.warn || 0) + (c.error || 0))}`)}
+  ${tab('problems', `Problems ${n((c.warn || 0) + (c.error || 0))}`)}
+  ${tab('error', `Errors ${n(c.error || 0)}`)}</div>
+  <span class="spacer"></span>
+  <label class="count"><input type="checkbox" id="auto" ${worker.running ? 'checked' : ''}> auto-refresh</label>
+</div>
+
+${worker.current ? `<p class="note"><b>Now reading:</b> ${esc(worker.current)}${
+  worker.currentFor_s != null ? ` — ${worker.currentFor_s}s so far` : ''}</p>` : ''}
+${worker.limit ? `<p class="note">Test run: stopping after <b>${worker.limit}</b> families. ${worker.done} done.</p>` : ''}
+
+<div class="card"><div class="card-b tw"><table class="logtable">
+<thead><tr><th>Time</th><th>Level</th><th>Event</th><th>Family</th><th>Detail</th><th class="n">Took</th></tr></thead>
+<tbody>${rows || '<tr><td colspan="6" style="color:var(--ink-3)">Nothing logged yet.</td></tr>'}</tbody>
+</table></div></div>`;
+
+  const script = `
+const cb=document.getElementById('auto');
+let t=null;
+function arm(){ if(cb.checked){ t=setTimeout(()=>location.reload(), 10000); } else if(t){ clearTimeout(t); t=null; } }
+cb.addEventListener('change',arm); arm();`;
+  return shell('MMRS — Worker log', frame('logs', {}, body), { script });
+}
+
 function notFound() {
   return shell('MMRS — not found', frame('dash', {}, `<div class="topbar"><div><h1>Nothing here</h1>
 <p class="sub">That path does not exist.</p></div></div>
 <div class="card"><div class="card-b"><a href="/">Back to the dashboard</a></div></div>`));
 }
 
-module.exports = { shell, esc, dashboard, importPage, scanPage, signin, unconfigured, notFound, familiesPage, familyPage };
+module.exports = { shell, esc, dashboard, importPage, scanPage, signin, unconfigured, notFound, familiesPage, familyPage, logsPage };

@@ -8,7 +8,7 @@ const imports = require('./import');
 const worker = require('./worker');
 
 const PORT = Number(process.env.PORT) || 3000;
-const VERSION = process.env.MMRS_VERSION || '0.3.0';
+const VERSION = process.env.MMRS_VERSION || '0.6.0';
 const COMMIT = (process.env.SOURCE_COMMIT || 'unknown').slice(0, 8);
 const STARTED = new Date();
 
@@ -133,9 +133,23 @@ const server = http.createServer(async (req, res) => {
     if ((m = p.match(/^\/api\/run\/(start|stop)$/)) && req.method === 'POST') {
       const latest = db.listImports().find((i) => i.status === 'ready');
       if (!latest) return json(res, 400, { error: 'no ready import' });
-      const r = m[1] === 'start' ? worker.start(latest.id) : worker.stop(latest.id);
+      const limit = Number(url.searchParams.get('limit')) || null;
+      const r = m[1] === 'start' ? worker.start(latest.id, limit) : worker.stop(latest.id);
       const wantsJson = (req.headers.accept || '').includes('application/json');
-      return wantsJson ? json(res, r.ok ? 200 : 409, r) : redirect(res, '/');
+      // A limited run is a test — send the operator straight to the log.
+      return wantsJson ? json(res, r.ok ? 200 : 409, r)
+        : redirect(res, m[1] === 'start' && limit ? '/logs' : '/');
+    }
+
+    if (p === '/api/events' && req.method === 'GET') {
+      const latest = db.listImports().find((i) => i.status === 'ready');
+      return json(res, 200, {
+        worker: worker.status(),
+        events: db.listEvents({ importId: latest && latest.id,
+          level: url.searchParams.get('level') || 'all',
+          limit: Number(url.searchParams.get('limit')) || 100,
+          sinceId: Number(url.searchParams.get('since')) || 0 }),
+      });
     }
 
     /* ---------- pages ---------- */
@@ -155,6 +169,17 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === '/import') return send(res, 200, page.importPage({ error: url.searchParams.get('error') }));
+
+    if (p === '/logs') {
+      const latest = db.listImports().find((i) => i.status === 'ready');
+      const level = url.searchParams.get('level') || 'all';
+      return send(res, 200, page.logsPage({
+        importId: latest && latest.id, level,
+        events: db.listEvents({ importId: latest && latest.id, level, limit: 300 }),
+        counts: latest ? db.eventCounts(latest.id) : [],
+        worker: worker.status(),
+      }));
+    }
 
     if (p === '/families') {
       const latest = db.listImports().find((i) => i.status === 'ready');

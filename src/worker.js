@@ -31,6 +31,7 @@ let state = {
   pausedUntil: null,
   done: 0,
   failed: 0,
+  limit: null,        // stop after this many successful families; null = until drained
 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -96,6 +97,7 @@ async function loop(importId) {
     catch (e) { state.lastError = `claim failed: ${e.message}`; await sleep(IDLE_MS); continue; }
 
     if (!family) {
+      db.logEvent(importId, 'info', 'run_stop', { detail: 'queue drained' });
       db.stopRun(importId, 'queue drained');
       state.running = false; state.current = null;
       console.log('[worker] queue drained — stopping');
@@ -103,10 +105,27 @@ async function loop(importId) {
     }
 
     state.current = family; state.since = Date.now();
+    const detail = db.familyDetail(importId, family);
+    db.logEvent(importId, 'info', 'claim', {
+      family, detail: `${detail ? detail.est_tokens.toLocaleString('en-GB') : '?'} tokens, `
+        + `${detail ? detail.n_messages : '?'} messages`,
+    });
+    const t0 = Date.now();
     try {
       const r = await extractOne(importId, family);
       state.done++; state.lastError = null;
+      db.logEvent(importId, 'info', 'extracted', {
+        family, ms: Date.now() - t0,
+        detail: `${r.verdict} — ${r.findings} findings, ${r.markers} markers`,
+      });
       console.log(`[worker] ${family} — ${r.verdict}, ${r.findings} findings, ${r.markers} markers`);
+      if (state.limit && state.done >= state.limit) {
+        db.logEvent(importId, 'info', 'run_stop', { detail: `limit of ${state.limit} reached` });
+        db.stopRun(importId, `limit of ${state.limit} reached`);
+        state.running = false; state.current = null;
+        console.log(`[worker] limit of ${state.limit} reached — stopping`);
+        break;
+      }
     } catch (e) {
       const msg = String(e.message || e);
       if (QUOTA_RE.test(msg)) {
@@ -114,10 +133,15 @@ async function loop(importId) {
         db.releaseFamily(importId, family, `quota: ${msg}`);
         state.pausedUntil = Date.now() + QUOTA_BACKOFF_MS;
         state.lastError = `quota reached — paused until ${new Date(state.pausedUntil).toISOString().slice(11, 16)}Z`;
+        db.logEvent(importId, 'warn', 'quota', {
+          family, ms: Date.now() - t0,
+          detail: `quota reached, requeued and pausing ${QUOTA_BACKOFF_MS / 60000} minutes — ${msg.slice(0, 300)}`,
+        });
         console.warn(`[worker] quota reached, pausing ${QUOTA_BACKOFF_MS / 60000}m`);
       } else {
         db.failFamily(importId, family, msg);
         state.failed++; state.lastError = `${family}: ${msg}`;
+        db.logEvent(importId, 'error', 'failed', { family, ms: Date.now() - t0, detail: msg });
         console.error(`[worker] ${family} failed — ${msg}`);
       }
     }
@@ -126,24 +150,36 @@ async function loop(importId) {
   state.running = false; state.stopping = false; state.current = null;
 }
 
-function start(importId) {
+function start(importId, limit) {
   if (state.running) return { ok: false, error: 'already running' };
   const released = db.releaseStale(importId);
   db.startRun(importId);
-  state = { ...state, running: true, stopping: false, lastError: null, pausedUntil: null, done: 0, failed: 0 };
-  console.log(`[worker] started on ${importId}${released ? ` (released ${released} stale)` : ''}`);
+  const lim = limit && Number(limit) > 0 ? Number(limit) : null;
+  state = { ...state, running: true, stopping: false, lastError: null, pausedUntil: null,
+    done: 0, failed: 0, limit: lim };
+  db.logEvent(importId, 'info', 'run_start', {
+    detail: `model ${MODEL}${lim ? `, limit ${lim} families` : ', until the queue drains'}`
+      + (released ? `, released ${released} stale claim(s)` : ''),
+  });
+  console.log(`[worker] started on ${importId}${lim ? ` (limit ${lim})` : ''}${released ? ` (released ${released} stale)` : ''}`);
   loop(importId).catch((e) => {
     state.running = false;
     state.lastError = `loop crashed: ${e.message}`;
+    db.logEvent(importId, 'error', 'crash', { detail: e.stack || e.message });
     db.stopRun(importId, `crashed: ${e.message}`);
     console.error('[worker] loop crashed', e);
   });
-  return { ok: true, released };
+  return { ok: true, released, limit: lim };
 }
 
 function stop(importId) {
   if (!state.running) return { ok: false, error: 'not running' };
   state.stopping = true;
+  db.logEvent(importId, 'info', 'run_stop', {
+    family: state.current || null,
+    detail: state.current ? `stop requested while reading "${state.current}" — will finish it first`
+                          : 'stop requested',
+  });
   db.stopRun(importId, 'stopped by operator');
   console.log('[worker] stop requested — will finish the family in flight');
   return { ok: true };
