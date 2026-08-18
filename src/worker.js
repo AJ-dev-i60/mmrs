@@ -54,15 +54,7 @@ function callClaude(input) {
   });
 }
 
-// The model occasionally wraps JSON in a fence despite instructions.
-function parseResult(text) {
-  const t = String(text || '').trim();
-  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const body = fenced ? fenced[1] : t;
-  const a = body.indexOf('{'), b = body.lastIndexOf('}');
-  if (a < 0 || b < 0) throw new Error('no JSON object in model output');
-  return JSON.parse(body.slice(a, b + 1));
-}
+const { parse: parseResult } = require('./jsonout');
 
 async function extractOne(importId, family) {
   const detail = db.familyDetail(importId, family);
@@ -78,7 +70,15 @@ async function extractOne(importId, family) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     env = JSON.parse(await callClaude(text));
     try { result = parseResult(env.result); break; }
-    catch (e) { lastErr = e; if (attempt === 2) throw new Error(`unparseable output: ${e.message}`); }
+    catch (e) {
+      lastErr = e;
+      try {
+        const dir = path.join(db.DATA_DIR, 'failed');
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, `${family.replace(/\W+/g, '-')}-try${attempt}.txt`), env.result || '');
+      } catch {}
+      if (attempt === 2) throw new Error(`unparseable output: ${e.message}`);
+    }
   }
   db.saveExtraction(importId, family, result, {
     model: MODEL, elapsed_ms: Date.now() - t0, usage: env.usage,

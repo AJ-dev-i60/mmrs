@@ -1,0 +1,206 @@
+{
+  "family": "Docker Compose Dynamic Instances",
+  "elapsed_s": 72,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 30555,
+    "cache_read_input_tokens": 16011,
+    "output_tokens": 5307,
+    "output_tokens_details": {
+      "thinking_tokens": 1179
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 30555,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 5307,
+        "cache_read_input_tokens": 16011,
+        "cache_creation_input_tokens": 30555,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 30555
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_equiv_usd": 0.4647585,
+  "summary": "A single-day working session turning a hand-edited per-client WordPress Docker Compose file into a reusable, parameterised stack deployable from Portainer on a phone. It covered env-var abstraction, two Portainer/Compose failures around volume naming, a small Flask container that generates .env files with random passwords, and a pivot to Git-repository-backed stacks. It closed with a debugging detour on zero-width Unicode characters introduced by copy-pasting code out of the chat.",
+  "verdict": "durable",
+  "topics": [
+    "docker-compose",
+    "portainer",
+    "wordpress",
+    "multi-tenant-deployment",
+    "secrets-generation",
+    "flask",
+    "unicode-debugging"
+  ],
+  "entities": [
+    "Portainer",
+    "Docker Compose",
+    "MariaDB 11.7.2",
+    "wordpress:latest",
+    "Flask",
+    "python:3.11-slim",
+    "Git",
+    "SharePoint",
+    "nano",
+    "cat -v",
+    "hexdump",
+    "U+200B"
+  ],
+  "findings": [
+    {
+      "type": "reference",
+      "title": "Environment variable substitution in Docker Compose volume names under Portainer",
+      "body": "Portainer's Compose validator rejects environment variable substitution used as a *key* in the top-level `volumes:` block. A file containing\n\n```yaml\nvolumes:\n  ${PROJECT_NAME}-db:\n  ${PROJECT_NAME}-wp:\n```\n\nfails validation with `validating /data/compose/<id>/docker-compose.yml: volumes Additional property ${PROJECT_NAME}-db is not allowed`. Substitution in `container_name`, in service `environment:` values and in port mappings is accepted — the restriction is specific to volume keys.\n\nThe supported alternative (Compose 3.6+) is a fixed key with a dynamic `name:` field:\n\n```yaml\nvolumes:\n  db-data:\n    name: \"${PROJECT_NAME}_db_data\"\n  wp-data:\n    name: \"${PROJECT_NAME}_wp_data\"\n```\n\nThis passes validation, but it only produces a valid volume if the variable actually resolves at deploy time. When `PROJECT_NAME` was empty, the name collapsed to `-wp` and the daemon refused it: `create -wp: \"-wp\" includes invalid characters for a local volume name, only \"[a-zA-Z0-9][a-zA-Z0-9_.-]\" are allowed`. Docker local volume names must begin with an alphanumeric character, so a leading separator from an unset variable is a hard failure rather than a silent default. Using `_` as the separator instead of `-` does not solve the underlying problem — it only changes which invalid string is produced.",
+      "confidence": 0.85,
+      "citations": [
+        15,
+        16,
+        18,
+        20,
+        21,
+        23
+      ]
+    },
+    {
+      "type": "decision",
+      "title": "Git-repository stacks over Portainer custom templates for per-client WordPress instances",
+      "body": "For deploying one parameterised WordPress + MariaDB stack repeatedly for different clients, Portainer's Custom Templates proved too limited: the template environment-variable editor is basic, and variables were not reliably substituted into volume names at deploy time, producing invalid volume names.\n\nThe chosen approach instead points a Portainer stack at a Git repository. The repository holds a single version-controlled `docker-compose.yml` using `${...}` placeholders throughout, plus an `env.example` documenting which variables are required with dummy values. Real `.env` files are never committed — `.env` goes in `.gitignore`, and the client-specific file is supplied to Portainer at deploy time. This keeps one authoritative Compose file, gives reproducible deployments and rollout of Compose changes by re-pulling the repo, and sidesteps the template env-var handling entirely.\n\nThe minimum viable repository is just `docker-compose.yml` and `env.example`; a README and `.gitignore` are useful but not required for the mechanism to work.",
+      "confidence": 0.8,
+      "citations": [
+        22,
+        25,
+        27,
+        28
+      ]
+    },
+    {
+      "type": "project",
+      "title": "Env-generator container for per-client WordPress stack credentials",
+      "body": "A small Flask container was built to remove the manual step of inventing passwords for each new client WordPress instance. It serves one page: a text field for the client name, and on submit it renders a ready-to-copy `.env` block containing `PROJECT_NAME`, `MYSQL_ROOT_PASSWORD`, `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD` and the host port. Passwords come from Python's `secrets` module (`secrets.token_urlsafe` or `secrets.token_hex`), not from a hand-rolled random generator.\n\nThe layout is three files — `app.py`, `Dockerfile`, and `templates/index.html` — built with `docker build -t env-generator .` and run detached with `docker run -d -p 5000:5000 env-generator`. Running it without `-d` holds the terminal because Flask's dev server stays in the foreground.\n\nThe motivating requirement was phone-based deployment: open the generator in a mobile browser, paste the generated block into Portainer, deploy. The container ships Flask's development server, which is acceptable for an internal single-user tool but is explicitly not a production WSGI setup. Storing generated credentials to a Google Sheet was considered and treated as convenient rather than secure; the alternative noted was a vault or an encrypted store.",
+      "confidence": 0.85,
+      "citations": [
+        3,
+        5,
+        6,
+        8,
+        29,
+        33
+      ]
+    },
+    {
+      "type": "howto",
+      "title": "Finding zero-width Unicode characters in code pasted from a chat interface",
+      "body": "Code copied out of a chat interface can carry invisible characters — most commonly the zero-width space, U+200B, encoded as the bytes `e2 80 8b`. These survive into files and break parsers in ways that look impossible, because the offending character does not render.\n\nTwo characteristic symptoms: Docker reports `dockerfile parse error on line 2: unknown instruction: ​WORKDIR (did you mean WORKDIR?)` — the instruction is correct but preceded by a hidden character — and Python reports `SyntaxError: invalid non-printable character U+200B` pointing at an apparently blank line.\n\nnano has no mode for displaying non-printing characters, so it cannot be used to diagnose this. Use `cat -v <file>` to render control and non-ASCII characters visibly, or `hexdump -C <file>` for the exact bytes. The fix is to delete and manually retype the affected lines, including blank ones, since the character often hides on lines that appear empty. Pasting through a plain-text editor before saving strips the problem at source.\n\nThe same class of corruption affects code pasted into rich-text web editors such as SharePoint pages, which may add smart quotes and zero-width characters on top of mangling indentation. Preformatted or code-snippet blocks avoid the rewriting; where a page only supports rich text, linking to the file in Git is more reliable than pasting it inline.",
+      "confidence": 0.9,
+      "citations": [
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38
+      ]
+    },
+    {
+      "type": "reference",
+      "title": "Build context for Portainer stacks built from a Dockerfile",
+      "body": "Portainer has no \"working directory\" setting for stack builds. When a stack's Compose file uses `build: .`, the path is resolved on the filesystem the Docker daemon sees, not against anything Portainer uploads — Portainer does not transfer the project files. If the source is already on the Docker host, give `build:` an absolute path (for example `build: /srv/env-generator`) rather than `.`, since the relative path has no meaningful base.\n\nThis only works where Portainer manages a local Docker socket. A remote Portainer agent cannot see the host's project directory unless specifically configured, in which case the workable routes are to build the image manually on the host (`docker build -t <name> .`) and reference it by image name in the stack, or to push it to a registry and pull from there. Either way the container remains manageable from Portainer's Containers view.",
+      "confidence": 0.75,
+      "citations": [
+        10,
+        12,
+        14
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "turn": 1,
+      "quote": "This is a robust script so I don't want the core of it to be changed, but I want to make it easier to modify and deploy.",
+      "note": "States constraint: preserve working core, change only deployment ergonomics"
+    },
+    {
+      "turn": 3,
+      "quote": "if I'm on my cellphone, I want to be able to deploy a full running web server instance with little to no struggle",
+      "note": "Defines success by mobile-only operability, not by tooling elegance"
+    },
+    {
+      "turn": 3,
+      "quote": "I'm thinking of running a 'management' container that has a basic UI that will allow the generation of the env file that I can then just copy. Thoughts?",
+      "note": "Proposes own architecture, then asks for evaluation of it"
+    },
+    {
+      "turn": 5,
+      "quote": "Let's just focus on the management container. Can you build a super simple one like that",
+      "note": "Narrows scope from a four-part plan to one component"
+    },
+    {
+      "turn": 7,
+      "quote": "Run me through where I need to use this flask code and exactly where and what I need to do",
+      "note": "Asks for explicit placement and steps rather than code alone"
+    },
+    {
+      "turn": 11,
+      "quote": "I've already created the folders and things on the server that portainer is running on",
+      "note": "Reports having acted ahead of the instructions given"
+    },
+    {
+      "turn": 17,
+      "quote": "I suspect this may be a problem if I try and deploy another version of this but the volumes have the same names.",
+      "note": "Spots a collision flaw in the proposed fix before testing it"
+    },
+    {
+      "turn": 17,
+      "quote": "Perhaps the web env generator should generate the entire script with the values already hard coded instead of just generating the env file. Or maybe a combination of the two",
+      "note": "Offers two alternative designs unprompted after finding the flaw"
+    },
+    {
+      "turn": 22,
+      "quote": "Let's modify the template so that I can paste the generated env file directly when creating the custom template",
+      "note": "Redirects approach immediately after an error, without asking for diagnosis"
+    },
+    {
+      "turn": 25,
+      "quote": "Ok because of the limitations of portainers templates, I'm going to add this to my git repository and then create a stack that references that git",
+      "note": "Announces a decision already made rather than requesting options"
+    },
+    {
+      "turn": 27,
+      "quote": "So I just created a docker-compose.yml file and env.example in the git repo and nothing else?",
+      "note": "Checks minimum required scope before doing extra work"
+    },
+    {
+      "turn": 35,
+      "quote": "How can I view invisible characters with nano",
+      "note": "Asks for a diagnostic method rather than accepting retype-by-hand fix"
+    },
+    {
+      "turn": 37,
+      "quote": "But I want to be able to document this code on my sharepoint page, but this isn't working properly",
+      "note": "Treats documenting the build as part of finishing it"
+    }
+  ],
+  "open_questions": [
+    "Did the Git-repository stack in Portainer actually accept an uploaded .env file at deploy time, and did the ${PROJECT_NAME} volume names resolve correctly that way?",
+    "Was the volumes `name:` approach ever confirmed working, or abandoned untested after the empty-variable failure?",
+    "Where do generated credentials ultimately get stored — the Google Sheet idea was raised but never decided or implemented.",
+    "How to reliably paste code into SharePoint without invisible-character corruption; the code-snippet web part was suggested but not confirmed available on his pages.",
+    "Whether the env-generator should also emit a fully hard-coded per-client Compose file, which he raised at turn 17 and never returned to."
+  ]
+}

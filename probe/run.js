@@ -25,16 +25,7 @@ function claude(input, model = 'opus') {
   });
 }
 
-// The model may wrap JSON in a fence despite instructions; recover rather than fail.
-function parseFindings(text) {
-  const t = String(text).trim();
-  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const body = fenced ? fenced[1] : t;
-  const start = body.indexOf('{');
-  const end = body.lastIndexOf('}');
-  if (start < 0 || end < 0) throw new Error('no JSON object in output');
-  return JSON.parse(body.slice(start, end + 1));
-}
+const { parse: parseFindings } = require('../src/jsonout');
 
 (async () => {
   const importId = db.listImports()[0].id;
