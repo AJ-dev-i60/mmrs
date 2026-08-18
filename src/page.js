@@ -293,7 +293,12 @@ function send(f){
 }
 
 function scanPage({ rec, scan, stats }) {
-  const months = Object.entries(scan.months || {}).filter(([k]) => k !== 'unknown');
+  // Fallbacks so imports scanned by an older build still render correctly.
+  const corpusChars = scan.corpusChars != null ? scan.corpusChars
+    : (scan.totalChars - (scan.redundantChars || 0));
+  const corpusTokens = scan.corpusTokens != null ? scan.corpusTokens : Math.floor(corpusChars / 4);
+  const stored = scan.storedMessages != null ? scan.storedMessages : null;
+  const months = Object.entries(scan.monthsDense || scan.months || {}).filter(([k]) => k !== 'unknown');
   const maxC = Math.max(1, ...months.map(([, v]) => v.convos));
   const bars = months.map(([k, v]) =>
     `<i class="${k >= '2025-05' ? 'hot' : ''}" style="height:${Math.max(2, v.convos / maxC * 100).toFixed(0)}%" title="${esc(k)}: ${v.convos} chats"></i>`).join('');
@@ -302,6 +307,8 @@ function scanPage({ rec, scan, stats }) {
   const body = `<div class="topbar">
 <div><h1>Scan result</h1><p class="sub">${esc(rec.filename)} · ${mb(rec.bytes)} · nothing charged</p></div>
 <div class="spacer"></div>${statPill(rec.status)}
+<form method="POST" action="/api/import/${esc(rec.id)}/scan" style="display:inline">
+<button class="btn ghost sm" type="submit" title="Re-runs the scan against the already-extracted files. Free, about two seconds.">Re-scan</button></form>
 ${!ready ? `<form method="POST" action="/api/import/${esc(rec.id)}/proceed" style="display:inline">
 <button class="btn" type="submit">Proceed — build the corpus</button></form>` : `<a class="btn ghost sm" href="/">Dashboard</a>`}
 </div>
@@ -309,8 +316,8 @@ ${!ready ? `<form method="POST" action="/api/import/${esc(rec.id)}/proceed" styl
 <div class="grid g4">
 <div class="card stat"><div class="k">Conversations</div><div class="v">${n(scan.conversations)}</div><div class="d">${esc(scan.firstDate)} → ${esc(scan.lastDate)}</div></div>
 <div class="card stat"><div class="k">After dedup</div><div class="v">${n(scan.families)}</div><div class="d">${n(scan.conversations - scan.families)} branch copies folded in</div></div>
-<div class="card stat"><div class="k">Messages</div><div class="v">${n(scan.distinctMessageIds)}</div><div class="d">${n(scan.nodesAll - scan.nodesMain)} dead branch nodes skipped</div></div>
-<div class="card stat"><div class="k">Size</div><div class="v">${(scan.estTokens / 1e6).toFixed(2)}<span style="font-size:15px">M</span></div><div class="d">est. tokens · ${scan.redundantPct}% redundant</div></div>
+<div class="card stat"><div class="k">Messages</div><div class="v">${n(stored != null ? stored : scan.distinctMessageIds)}</div><div class="d">${stored != null ? `${n(scan.emptyMessages)} empty dropped · ` : ''}${n(scan.nodesAll - scan.nodesMain)} dead nodes skipped</div></div>
+<div class="card stat"><div class="k">Corpus</div><div class="v">${(corpusTokens / 1e6).toFixed(2)}<span style="font-size:15px">M</span></div><div class="d">tokens to process · ${(scan.estTokens / 1e6).toFixed(2)}M before dedup</div></div>
 </div>
 
 <div class="grid g2" style="margin-top:14px">
@@ -318,12 +325,15 @@ ${!ready ? `<form method="POST" action="/api/import/${esc(rec.id)}/proceed" styl
 <div class="card-b"><div class="hist">${bars}</div>
 <div class="hist-x"><span>${esc(months[0] ? months[0][0] : '')}</span><span>${esc(months[months.length - 1] ? months[months.length - 1][0] : '')}</span></div>
 <p class="note">Highlighted bars are from <b>${esc(require('./ingest').ERA_BOUNDARY)}</b> onward — the era treated as primary evidence.
-Everything before it is sparse enough to read as background rather than signal.</p></div></div>
+Everything before it is sparse enough to read as background rather than signal.
+Months with no conversations are drawn as gaps rather than skipped, so quiet periods look quiet.</p></div></div>
 
 <div class="card"><div class="card-h"><h2>Composition</h2></div><div class="card-b"><div class="tw"><table>
 <tbody>
 <tr><td>User wrote</td><td class="n">${n(scan.userChars)} chars</td></tr>
 <tr><td>Assistant wrote</td><td class="n">${n(scan.asstChars)} chars</td></tr>
+<tr><td>Duplicated across branches</td><td class="n">−${n(scan.redundantChars)} chars</td></tr>
+<tr><td><b>Corpus after dedup</b></td><td class="n"><b>${n(corpusChars)} chars</b></td></tr>
 <tr><td>Rich conversations (10k+)</td><td class="n">${n(scan.richCount)}</td></tr>
 <tr><td>…holding</td><td class="n">${scan.richShare}% of text</td></tr>
 <tr><td>Families with branches</td><td class="n">${n(scan.branchFamilies)}</td></tr>
@@ -342,7 +352,7 @@ and is not built yet — no quota has been spent.</p></div></div>` : ''}
 <div class="card" style="margin-top:14px"><div class="card-h"><h2>Worth knowing</h2></div><div class="card-b"><div class="tw">
 <table><thead><tr><th>Finding</th><th>Why it matters</th></tr></thead><tbody>
 <tr><td><b>${n(scan.richCount)} conversations hold ${scan.richShare}% of the text</b></td><td>Value is concentrated; the long tail is cheap and rarely yields much.</td></tr>
-<tr><td><b>${scan.redundantPct}% of text is duplicated</b></td><td>Branch copies, folded on message ID. Without this the same argument is read repeatedly.</td></tr>
+<tr><td><b>${scan.redundantPct}% of text is duplicated</b></td><td>Branch copies, folded on message ID — ${n(scan.estTokens)} tokens in the file becomes ${n(corpusTokens)} to process.</td></tr>
 <tr><td><b>${n(scan.attachments ? scan.attachments.count : 0)} attachments</b></td><td>Not read. Images referenced by messages that call them "this".</td></tr>
 <tr><td><b>${n(scan.nodesAll - scan.nodesMain)} dead branch nodes</b></td><td>Abandoned regenerations, skipped by walking from <code>current_node</code>.</td></tr>
 </tbody></table></div></div></div>`;

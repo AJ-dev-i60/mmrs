@@ -96,7 +96,8 @@ const server = http.createServer(async (req, res) => {
     let m;
     if ((m = p.match(/^\/api\/import\/([\w-]+)\/scan$/)) && req.method === 'POST') {
       const scan = await imports.scan(m[1]);
-      return json(res, 200, { id: m[1], scan });
+      const wantsJson = (req.headers.accept || '').includes('application/json');
+      return wantsJson ? json(res, 200, { id: m[1], scan }) : redirect(res, `/scan/${m[1]}`);
     }
 
     if ((m = p.match(/^\/api\/import\/([\w-]+)\/proceed$/)) && req.method === 'POST') {

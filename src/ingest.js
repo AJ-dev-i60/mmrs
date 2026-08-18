@@ -113,7 +113,7 @@ const isHidden = (m) => Boolean(m.metadata && m.metadata.is_visually_hidden_from
 function survey(root) {
   const { convos, shards } = load(root);
 
-  let nodesAll = 0, nodesMain = 0, hidden = 0;
+  let nodesAll = 0, nodesMain = 0, hidden = 0, emptyMessages = 0;
   let userChars = 0, asstChars = 0;
   const roles = new Map(), contentTypes = new Map(), models = new Map();
   const months = new Map();
@@ -142,7 +142,10 @@ function survey(root) {
         const ml = modelOf(m);
         if (ml) models.set(ml, (models.get(ml) || 0) + 1);
       }
-      if (idsSeen.has(m.id)) dupChars += len; else idsSeen.add(m.id);
+      if (idsSeen.has(m.id)) { dupChars += len; } else {
+        idsSeen.add(m.id);
+        if (!text.trim()) emptyMessages++;   // stripped 'thoughts'/'reasoning_recap'
+      }
     }
 
     userChars += u; asstChars += a;
@@ -180,6 +183,12 @@ function survey(root) {
     distinctMessageIds: idsSeen.size,
     userChars, asstChars, totalChars,
     estTokens: Math.floor(totalChars / 4),
+    // What actually gets processed, after folding branch duplicates. This is
+    // the figure the operator needs; totalChars/estTokens are the raw file.
+    corpusChars: totalChars - dupChars,
+    corpusTokens: Math.floor((totalChars - dupChars) / 4),
+    emptyMessages,
+    storedMessages: idsSeen.size - emptyMessages,
     redundantChars: dupChars,
     redundantPct: totalChars ? +(100 * dupChars / totalChars).toFixed(1) : 0,
     firstDate: dates[0] || null,
@@ -192,11 +201,28 @@ function survey(root) {
     contentTypes: Object.fromEntries([...contentTypes].sort((a, b) => b[1] - a[1])),
     models: Object.fromEntries([...models].sort((a, b) => b[1] - a[1])),
     months: Object.fromEntries([...months].sort()),
+    // Every calendar month between first and last, so quiet periods render as
+    // gaps rather than being silently dropped — omitting them understates
+    // exactly the sparseness the chart exists to show.
+    monthsDense: denseMonths(months, dates[0], dates[dates.length - 1]),
   };
 }
 
+function denseMonths(months, firstDate, lastDate) {
+  if (!firstDate || !lastDate) return {};
+  const out = {};
+  const d = new Date(firstDate.slice(0, 7) + '-01T00:00:00Z');
+  const end = new Date(lastDate.slice(0, 7) + '-01T00:00:00Z');
+  while (d <= end) {
+    const k = d.toISOString().slice(0, 7);
+    out[k] = months.get(k) || { convos: 0, chars: 0 };
+    d.setUTCMonth(d.getUTCMonth() + 1);
+  }
+  return out;
+}
+
 module.exports = {
-  charLen, findShards, load, flatten, mainline,
+  charLen, findShards, load, flatten, mainline, denseMonths,
   familyOf, isBranch, ts, day, era, roleOf, modelOf, isHidden, survey,
   ERA_BOUNDARY,
 };
