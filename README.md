@@ -1,41 +1,72 @@
 # MMRS
 
-Deployment scaffold at `https://mmrs.edgestudios.co.za`, on the EdgeStudios
-Coolify VPS.
+Ingests a ChatGPT data export and turns it into a normalised corpus, ready for
+extraction into Outline canon.
 
-**Status: scaffold.** It proves DNS, certificate, build, deploy, healthcheck and
-the access gate. The application it becomes is not yet specified.
+Live at `https://mmrs.edgestudios.co.za` behind Pocket-ID SSO.
+Canon: Outline → **PR · Archivist — chat archive to Outline canon**.
 
-## Design notes
+## Pipeline
 
-Zero runtime dependencies — Node built-ins only, so the image is the runtime
-plus three source files and there is no install step. Same shape as
-`edge-launcher`, which is the known-good pattern on this Coolify.
+    upload → unpack → scan → [Proceed] → normalise → extract → review → publish
+    └───────── free, ~2.5s for 86 MB ──────────┘   └── quota ──┘
 
-**Fails closed.** With no `MMRS_PASSCODE` set the server answers 503 rather than
-serving an open page. The `*.edgestudios.co.za` wildcard means this hostname
-resolves publicly for anyone, and this service is expected to hold personal
-material, so an open default would be wrong.
+Everything up to and including normalise is free and spends no Claude quota.
+The operator sees the full scan and presses Proceed before anything is spent.
+Extraction and review are not built yet.
+
+## Layout
+
+    src/server.js     routes, auth
+    src/oidc.js       Pocket-ID authorization-code flow with PKCE
+    src/gate.js       passcode fallback (inert once OIDC is configured)
+    src/page.js       server-rendered screens
+    src/db.js         schema + queries (node:sqlite, WAL)
+    src/ingest.js     export parsing — shards, mainline walk, survey
+    src/normalise.js  dedup + corpus store + work queue
+    src/import.js     upload, recursive unzip, scan, proceed
+
+Zero runtime dependencies — Node built-ins only. `unzip` is the sole binary
+dependency, and only because Node has no zip container support.
+
+## Three things that will bite a reimplementation
+
+**A conversation is a graph, not a list.** Walk `current_node` up the `parent`
+chain and reverse. Iterating `mapping.values()` ingests abandoned regenerations
+— 581 of 7,780 nodes in the 2026-08 export.
+
+**Branches share message IDs.** ChatGPT's branch-into-new-chat produces separate
+conversations overlapping their parent by up to 98%. Dedup on message ID; that
+removes 15.3% of the corpus. Never dedup by keeping the largest conversation in
+a title family — branches diverge, so that silently loses content.
+
+**The export nests zips.** Conversations live inside
+`User Online Activity/Conversations__….zip`, *inside* the outer archive. Unzip
+recursively or the shard search comes back empty.
+
+## Verification
+
+The ingest logic is a port of the Python reference in `~/projects/archivist`.
+It reproduces those numbers exactly, which is the regression test:
+
+    690 conversations → 667 families, 5,910 messages, 7,785,180 chars
+    (~1.95M tokens), 15.3% redundant, 326 empty messages dropped
 
 ## Environment
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `MMRS_PASSCODE` | yes | Gate passcode. Without it the service returns 503. |
-| `PORT` | no | Listen port, default 3000. |
-| `MMRS_VERSION` | no | Shown on the landing page. |
-| `SOURCE_COMMIT` | no | Set by Coolify; shown on the landing page. |
+| `OIDC_ISSUER` | yes | `https://id.edgestudios.co.za` |
+| `OIDC_CLIENT_ID` | yes | Pocket-ID client |
+| `OIDC_CLIENT_SECRET` | yes | Pocket-ID client secret |
+| `BASE_URL` | yes | Public URL, used to build the redirect URI |
+| `OIDC_ALLOWED_GROUPS` | no | Comma-separated. Empty = any Pocket-ID user |
+| `MMRS_DATA` | no | Data directory, default `/data`. **Must be a volume.** |
+| `MMRS_VERSION` | no | Shown in the UI |
 
-## Routes
+## Storage
 
-| Route | Auth | Purpose |
-|-------|------|---------|
-| `/healthz` | open | Coolify healthcheck. JSON. |
-| `/gate` | open | POST passcode, sets a signed cookie. |
-| `/` | gated | Landing page. |
-
-## Next
-
-Pocket-ID SSO, replacing the passcode gate. Note that Pocket-ID requires
-`client_secret_post` and does not advertise it — see the Launcher page in
-Outline before wiring it.
+SQLite at `$MMRS_DATA/mmrs.db` (WAL), uploads under `$MMRS_DATA/imports/<id>/`.
+Single writer, many readers — which is exactly SQLite's sweet spot for this
+shape. Postgres is the escape hatch if the extraction worker ever needs true
+write concurrency; nothing here uses SQLite-specific SQL beyond the pragmas.
