@@ -1,9 +1,17 @@
 'use strict';
 
-const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g,
-  (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const md = require('./md');
+const esc = md.esc;
 const n = (x) => (x == null ? '—' : Number(x).toLocaleString('en-GB'));
 const mb = (b) => (b == null ? '—' : (b / 1048576).toFixed(0) + ' MB');
+// Scannable magnitudes. 349k reads faster down a column than 349,214, and the
+// exact figure stays available on hover.
+const compact = (x) => {
+  if (x == null) return '—';
+  if (x >= 1e6) return (x / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (x >= 1e3) return Math.round(x / 1e3) + 'k';
+  return String(x);
+};
 
 const CSS = `
 :root{--ground:#f6f8f9;--panel:#fff;--panel-2:#f0f3f5;--ink:#141b1e;--ink-2:#4a595f;--ink-3:#78888f;
@@ -127,6 +135,20 @@ th.sortable::after{content:"";opacity:.4;margin-left:5px}
 th.sortable[data-dir="asc"]::after{content:"↑";opacity:1}
 th.sortable[data-dir="desc"]::after{content:"↓";opacity:1}
 tr.fam:hover{background:var(--panel-2)}
+.famtable{table-layout:fixed;min-width:640px}
+.famtable th,.famtable td{padding-right:20px}
+.famtable th:last-child,.famtable td:last-child{padding-right:0;text-align:right}
+.famtable th:first-child,.famtable td:first-child{padding-left:2px}
+.c-name{width:auto}
+.c-msgs{width:84px}
+.c-size{width:92px}
+.c-date{width:108px}
+td.c-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.c-date{color:var(--ink-3);font-size:12.5px}
+td.c-msgs{color:var(--ink-2)}
+.chip{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.03em;padding:1px 6px;
+border-radius:4px;background:var(--accent-soft);color:var(--accent);vertical-align:1px;margin-left:5px}
+.chip.early{background:var(--done-soft);color:var(--done)}
 tr.fam td:first-child a{text-decoration:none;font-weight:500;color:var(--ink)}
 tr.fam td:first-child a:hover{color:var(--accent)}
 .era{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;
@@ -139,10 +161,31 @@ border-radius:5px;background:var(--done-soft);color:var(--done)}
 .who.user{color:var(--accent)}
 .who.assistant{color:var(--ink-3)}
 .turn-m{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
-.msg{font-family:"IBM Plex Serif",Georgia,serif;font-size:15px;line-height:1.65;white-space:pre-wrap;
-word-wrap:break-word;overflow-wrap:break-word;max-width:74ch;margin:0}
+.msg{font-family:"IBM Plex Serif",Georgia,serif;font-size:15px;line-height:1.68;
+overflow-wrap:break-word;max-width:74ch}
 .msg.user{color:var(--ink)}
 .msg.assistant{color:var(--ink-2)}
+.msg p{margin:0 0 12px}
+.msg p:last-child{margin-bottom:0}
+.msg .mdh{font-family:"IBM Plex Sans",sans-serif;font-size:13px;font-weight:600;letter-spacing:.01em;
+color:var(--ink);margin:20px 0 8px;text-wrap:balance}
+.msg .mdh:first-child{margin-top:0}
+.msg ul,.msg ol{margin:0 0 12px;padding-left:22px}
+.msg li{margin:0 0 5px}
+.msg li:last-child{margin-bottom:0}
+.msg blockquote{margin:0 0 12px;padding:2px 0 2px 14px;border-left:2px solid var(--line-2);color:var(--ink-3)}
+.msg hr{border:0;border-top:1px solid var(--line);margin:18px 0}
+.msg code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--panel-2);
+padding:1.5px 5px;border-radius:4px}
+.msg pre{background:var(--panel-2);border:1px solid var(--line);border-radius:7px;padding:12px 14px;
+overflow-x:auto;margin:0 0 12px;max-width:100%}
+.msg pre code{background:none;padding:0;font-size:12.5px;line-height:1.5;white-space:pre}
+.msg .mdtw{overflow-x:auto;margin:0 0 12px;max-width:100%}
+.msg .mdt{font-family:"IBM Plex Sans",sans-serif;font-size:13px;min-width:0;width:auto}
+.msg .mdt th{font-size:10.5px;padding:0 16px 7px 0}
+.msg .mdt td{padding:7px 16px 7px 0}
+.msg a{color:var(--accent)}
+.msg strong{font-weight:600;color:var(--ink)}
 .branchmark{background:var(--wait-soft);color:var(--wait);padding:9px 14px;border-radius:7px;
 font-size:12.5px;font-weight:600;margin:26px 0 6px}
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
@@ -421,14 +464,17 @@ and is not built yet — no quota has been spent.</p></div></div>` : ''}
 }
 
 function familiesPage({ importId, families, stats }) {
+  // Era is dropped as a column: it is derived from the start date and 529 of
+  // 667 rows say "primary", so a full column of it repeats what the date
+  // already shows. It is marked only on the minority it distinguishes.
   const rows = families.map((f) => `<tr class="fam" data-name="${esc(f.family.toLowerCase())}"
  data-chars="${f.chars}" data-msgs="${f.n_messages}" data-date="${esc(f.first_seen || '')}" data-convos="${f.n_convos}">
-<td><a href="/family/${encodeURIComponent(f.family)}">${esc(f.family)}</a></td>
-<td class="n">${f.n_convos > 1 ? f.n_convos : ''}</td>
-<td class="n">${n(f.n_messages)}</td>
-<td class="n">${n(f.chars)}</td>
-<td class="n">${esc(f.first_seen || '')}</td>
-<td><span class="era ${f.era === 'primary' ? 'primary' : ''}">${esc(f.era)}</span></td>
+<td class="c-name"><a href="/family/${encodeURIComponent(f.family)}">${esc(f.family)}</a>${
+  f.n_convos > 1 ? ` <span class="chip" title="Folded from ${f.n_convos} separate chats">${f.n_convos} parts</span>` : ''}${
+  f.era === 'baseline' ? ' <span class="chip early" title="Before the dense period from 2025-05">early</span>' : ''}</td>
+<td class="n c-msgs">${n(f.n_messages)}</td>
+<td class="n c-size" title="${n(f.chars)} characters">${compact(f.chars)}</td>
+<td class="n c-date">${esc(f.first_seen || '')}</td>
 </tr>`).join('');
 
   const body = `<div class="topbar">
@@ -439,19 +485,18 @@ function familiesPage({ importId, families, stats }) {
 <div class="grow"><input type="search" id="q" placeholder="Filter — try &quot;volvo&quot;, &quot;subwoofer&quot;, &quot;proverbs&quot;…" autocomplete="off"></div>
 <span class="count" id="count">${n(families.length)} shown</span></div>
 
-<div class="card"><div class="tw"><table id="fam">
+<div class="card"><div class="card-b tw"><table id="fam" class="famtable">
 <thead><tr>
-<th class="sortable" data-k="name">Conversation</th>
-<th class="n sortable" data-k="convos">Parts</th>
-<th class="n sortable" data-k="msgs">Msgs</th>
-<th class="n sortable" data-k="chars" data-dir="desc">Chars</th>
-<th class="n sortable" data-k="date">Started</th>
-<th>Era</th>
+<th class="sortable c-name" data-k="name">Conversation</th>
+<th class="n sortable c-msgs" data-k="msgs">Msgs</th>
+<th class="n sortable c-size" data-k="chars" data-dir="desc">Size</th>
+<th class="n sortable c-date" data-k="date">Started</th>
 </tr></thead><tbody>${rows}</tbody></table></div></div>
 
-<p class="note"><b>Parts</b> is how many separate chats ChatGPT split this into — a number there means you
-branched the conversation and it has been folded back together. <b>Era</b> marks whether it falls in the
-dense period from ${esc(require('./ingest').ERA_BOUNDARY)} onward.</p>`;
+<p class="note"><b>Parts</b> means ChatGPT split this across that many separate chats — you branched it,
+and it has been folded back into one thread. <b>Early</b> marks the sparse period before
+${esc(require('./ingest').ERA_BOUNDARY)}; everything unmarked is from the dense era.
+Sizes are rounded — hover for the exact count.</p>`;
 
   const script = `
 const q=document.getElementById('q'),tb=document.querySelector('#fam tbody'),cnt=document.getElementById('count');
@@ -479,8 +524,8 @@ document.querySelectorAll('th.sortable').forEach(th=>th.addEventListener('click'
 }
 
 function familyPage({ family, detail, conversations, messages }) {
-  // Message text is markdown, rendered as pre-wrap rather than parsed. A real
-  // markdown pass would read better; it is not worth a dependency yet.
+  // Message text is markdown, rendered by src/md.js — escaped first, so the
+  // output can only contain tags that renderer emits.
   const byConv = new Map();
   let out = '', shown = 0, branchIdx = 0;
   const convStarts = new Map();
@@ -491,7 +536,7 @@ function familyPage({ family, detail, conversations, messages }) {
     out += `<div class="turn"><div class="turn-h">
 <span class="who ${esc(m.role)}">${esc(m.role)}</span>
 <span class="turn-m">${esc((m.created || '').slice(0, 10))} · ${n(m.chars)} chars${m.model ? ' · ' + esc(m.model) : ''}</span>
-</div><p class="msg ${esc(m.role)}">${esc(m.text)}</p></div>`;
+</div><div class="msg ${esc(m.role)}">${md.render(m.text)}</div></div>`;
   }
 
   const body = `<div class="topbar">
