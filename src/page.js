@@ -118,6 +118,36 @@ progress{width:100%;height:8px}
 .err{background:var(--fail-soft);color:var(--fail);padding:11px 14px;border-radius:7px;font-size:13.5px;margin:0 0 16px}
 a{color:var(--accent)}
 code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--panel-2);padding:1.5px 5px;border-radius:4px}
+input[type=search]{width:100%;padding:9px 13px;border:1px solid var(--line-2);border-radius:7px;
+background:var(--panel);color:var(--ink);font:inherit;font-size:14px}
+input[type=search]:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--ink)}
+th.sortable::after{content:"";opacity:.4;margin-left:5px}
+th.sortable[data-dir="asc"]::after{content:"↑";opacity:1}
+th.sortable[data-dir="desc"]::after{content:"↓";opacity:1}
+tr.fam:hover{background:var(--panel-2)}
+tr.fam td:first-child a{text-decoration:none;font-weight:500;color:var(--ink)}
+tr.fam td:first-child a:hover{color:var(--accent)}
+.era{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;
+border-radius:5px;background:var(--done-soft);color:var(--done)}
+.era.primary{background:var(--accent-soft);color:var(--accent)}
+.turn{border-top:1px solid var(--line);padding:18px 0 4px;margin-top:14px}
+.turn:first-of-type{border-top:0;margin-top:0}
+.turn-h{display:flex;align-items:baseline;gap:10px;margin-bottom:9px}
+.who{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.who.user{color:var(--accent)}
+.who.assistant{color:var(--ink-3)}
+.turn-m{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+.msg{font-family:"IBM Plex Serif",Georgia,serif;font-size:15px;line-height:1.65;white-space:pre-wrap;
+word-wrap:break-word;overflow-wrap:break-word;max-width:74ch;margin:0}
+.msg.user{color:var(--ink)}
+.msg.assistant{color:var(--ink-2)}
+.branchmark{background:var(--wait-soft);color:var(--wait);padding:9px 14px;border-radius:7px;
+font-size:12.5px;font-weight:600;margin:26px 0 6px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.toolbar .grow{flex:1;min-width:220px}
+.count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);white-space:nowrap}
 `;
 
 function shell(title, body, opts = {}) {
@@ -138,6 +168,7 @@ function frame(active, current, body) {
 <div class="brand"><b>MMRS</b><span>console</span></div>
 <nav>
   <a href="/" ${active === 'dash' ? 'aria-current="page"' : ''}>Dashboard</a>
+  <a href="/families" ${active === 'browse' ? 'aria-current="page"' : ''}>Archive</a>
   <a href="/import" ${active === 'import' ? 'aria-current="page"' : ''}>Import</a>
 </nav>
 <div class="spine"><h3>Pipeline</h3>
@@ -212,6 +243,26 @@ ${stats && stats.families ? `<div class="grid g4">
 <div class="card stat"><div class="k">Queued</div><div class="v">${n((stats.queue.find((q) => q.status === 'pending') || {}).n || 0)}</div><div class="d">awaiting extraction</div></div>
 </div>` : ''}
 
+${stats && stats.families ? `<div class="grid g2" style="margin-top:14px">
+<div class="card"><div class="card-h"><h2>Biggest threads</h2>
+<a class="btn ghost sm" href="/families">Browse all ${n(stats.families)}</a></div><div class="card-b">
+<div class="tw"><table><tbody>
+${(stats.top || []).map((f) => `<tr><td><a href="/family/${encodeURIComponent(f.family)}" style="text-decoration:none;color:var(--ink);font-weight:500">${esc(f.family)}</a>
+<div style="font-size:11.5px;color:var(--ink-3);margin-top:2px">${esc(f.first_seen)} → ${esc(f.last_seen)}${f.n_convos > 1 ? ` · ${f.n_convos} chats folded` : ''}</div></td>
+<td class="n">${n(f.chars)}</td></tr>`).join('')}
+</tbody></table></div>
+<p class="note">These are the threads worth reading first — and the ones extraction will spend the most on.</p>
+</div></div>
+
+<div class="card"><div class="card-h"><h2>Work queue</h2><span class="count">all pending</span></div><div class="card-b">
+<div class="tw"><table><thead><tr><th>Priority</th><th class="n">Families</th><th class="n">Tokens</th></tr></thead><tbody>
+${(stats.queueByPriority || []).map((p) => `<tr><td>p${p.priority}</td><td class="n">${n(p.n)}</td><td class="n">${n(p.tokens)}</td></tr>`).join('')}
+</tbody></table></div>
+${stats.era ? `<div class="tw" style="margin-top:14px"><table><thead><tr><th>Era</th><th class="n">Families</th><th class="n">Tokens</th></tr></thead><tbody>
+${stats.era.map((e) => `<tr><td><span class="era ${e.era === 'primary' ? 'primary' : ''}">${esc(e.era)}</span></td><td class="n">${n(e.n)}</td><td class="n">${n(e.tokens)}</td></tr>`).join('')}
+</tbody></table></div>` : ''}
+</div></div></div>` : ''}
+
 ${imports.length ? `<div class="card" style="margin-top:14px"><div class="card-h"><h2>Imports</h2>
 <a class="btn ghost sm" href="/import">Import another</a></div><div class="card-b"><div class="tw"><table>
 <thead><tr><th>Uploaded</th><th>File</th><th>Corpus</th><th class="n">Size</th><th class="n">Chats</th><th>Status</th><th></th></tr></thead>
@@ -225,8 +276,12 @@ ${imports.length ? `<div class="card" style="margin-top:14px"><div class="card-h
 ${imports.some((i) => i.error) ? `<p class="note warn"><b>Last error:</b> ${esc(imports.find((i) => i.error).error)}</p>` : ''}
 </div></div>` : ''}
 
-<p class="note">Stages 4 and 5 — extraction and review — are not built yet. Everything above them is free
-and spends no Claude quota, which is why it comes first.</p>`;
+<p class="note">${stats && stats.families
+    ? `The corpus is built and every family is queued. <b>Extraction and review are not built yet</b> — nothing
+       has spent any Claude quota, and nothing has been written to Outline. In the meantime the archive is
+       readable: <a href="/families">browse it</a>.`
+    : `Extraction and review are not built yet. Everything before them is free and spends no Claude quota,
+       which is why it comes first.`}</p>`;
 
   return shell('MMRS Console', frame('dash', cur, body));
 }
@@ -365,10 +420,101 @@ and is not built yet — no quota has been spent.</p></div></div>` : ''}
   }, body));
 }
 
+function familiesPage({ importId, families, stats }) {
+  const rows = families.map((f) => `<tr class="fam" data-name="${esc(f.family.toLowerCase())}"
+ data-chars="${f.chars}" data-msgs="${f.n_messages}" data-date="${esc(f.first_seen || '')}" data-convos="${f.n_convos}">
+<td><a href="/family/${encodeURIComponent(f.family)}">${esc(f.family)}</a></td>
+<td class="n">${f.n_convos > 1 ? f.n_convos : ''}</td>
+<td class="n">${n(f.n_messages)}</td>
+<td class="n">${n(f.chars)}</td>
+<td class="n">${esc(f.first_seen || '')}</td>
+<td><span class="era ${f.era === 'primary' ? 'primary' : ''}">${esc(f.era)}</span></td>
+</tr>`).join('');
+
+  const body = `<div class="topbar">
+<div><h1>Your archive</h1><p class="sub">${n(families.length)} families · ${n(stats.messages)} messages · ${(stats.tokens / 1e6).toFixed(2)}M tokens · ${esc(stats.first)} → ${esc(stats.last)}</p></div>
+<div class="spacer"></div><a class="btn ghost sm" href="/">Dashboard</a></div>
+
+<div class="toolbar">
+<div class="grow"><input type="search" id="q" placeholder="Filter — try &quot;volvo&quot;, &quot;subwoofer&quot;, &quot;proverbs&quot;…" autocomplete="off"></div>
+<span class="count" id="count">${n(families.length)} shown</span></div>
+
+<div class="card"><div class="tw"><table id="fam">
+<thead><tr>
+<th class="sortable" data-k="name">Conversation</th>
+<th class="n sortable" data-k="convos">Parts</th>
+<th class="n sortable" data-k="msgs">Msgs</th>
+<th class="n sortable" data-k="chars" data-dir="desc">Chars</th>
+<th class="n sortable" data-k="date">Started</th>
+<th>Era</th>
+</tr></thead><tbody>${rows}</tbody></table></div></div>
+
+<p class="note"><b>Parts</b> is how many separate chats ChatGPT split this into — a number there means you
+branched the conversation and it has been folded back together. <b>Era</b> marks whether it falls in the
+dense period from ${esc(require('./ingest').ERA_BOUNDARY)} onward.</p>`;
+
+  const script = `
+const q=document.getElementById('q'),tb=document.querySelector('#fam tbody'),cnt=document.getElementById('count');
+const all=[...tb.querySelectorAll('tr')];
+function filter(){
+  const v=q.value.trim().toLowerCase();let n=0;
+  for(const r of all){const hit=!v||r.dataset.name.includes(v);r.style.display=hit?'':'none';if(hit)n++}
+  cnt.textContent=n.toLocaleString('en-GB')+' shown';
+}
+q.addEventListener('input',filter);
+document.querySelectorAll('th.sortable').forEach(th=>th.addEventListener('click',()=>{
+  const k=th.dataset.k,cur=th.dataset.dir;const dir=cur==='desc'?'asc':'desc';
+  document.querySelectorAll('th.sortable').forEach(o=>o.removeAttribute('data-dir'));
+  th.dataset.dir=dir;
+  const num=k!=='name'&&k!=='date';
+  all.sort((a,b)=>{
+    let x=a.dataset[k],y=b.dataset[k];
+    if(num){x=+x;y=+y}
+    const c=num?x-y:String(x).localeCompare(String(y));
+    return dir==='desc'?-c:c;
+  });
+  all.forEach(r=>tb.appendChild(r));
+}));`;
+  return shell('MMRS — Your archive', frame('browse', {}, body), { script });
+}
+
+function familyPage({ family, detail, conversations, messages }) {
+  // Message text is markdown, rendered as pre-wrap rather than parsed. A real
+  // markdown pass would read better; it is not worth a dependency yet.
+  const byConv = new Map();
+  let out = '', shown = 0, branchIdx = 0;
+  const convStarts = new Map();
+  for (const c of conversations) convStarts.set(c.id, c);
+
+  for (const m of messages) {
+    shown++;
+    out += `<div class="turn"><div class="turn-h">
+<span class="who ${esc(m.role)}">${esc(m.role)}</span>
+<span class="turn-m">${esc((m.created || '').slice(0, 10))} · ${n(m.chars)} chars${m.model ? ' · ' + esc(m.model) : ''}</span>
+</div><p class="msg ${esc(m.role)}">${esc(m.text)}</p></div>`;
+  }
+
+  const body = `<div class="topbar">
+<div><h1>${esc(family)}</h1><p class="sub">${n(detail.n_messages)} messages · ${n(detail.chars)} chars · ${esc(detail.first_seen)} → ${esc(detail.last_seen)}${detail.n_convos > 1 ? ` · folded from ${detail.n_convos} chats` : ''}</p></div>
+<div class="spacer"></div><a class="btn ghost sm" href="/families">Back to archive</a></div>
+
+${detail.n_convos > 1 ? `<div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Folded from ${detail.n_convos} chats</h2>
+<span class="count">${detail.redundancy_pct}% was duplicate</span></div><div class="card-b"><div class="tw"><table>
+<thead><tr><th>Chat</th><th class="n">Started</th><th class="n">Messages</th><th class="n">Chars</th></tr></thead><tbody>
+${conversations.map((c) => `<tr><td>${esc(c.title || '(untitled)')}</td><td class="n">${esc((c.created || '').slice(0, 10))}</td><td class="n">${n(c.n_messages)}</td><td class="n">${n(c.chars)}</td></tr>`).join('')}
+</tbody></table></div>
+<p class="note">These overlapped heavily. Only genuinely new messages are shown below, in date order —
+nothing is repeated, and nothing is lost.</p></div></div>` : ''}
+
+<div class="card"><div class="card-b">${out}</div></div>`;
+
+  return shell(`MMRS — ${family}`, frame('browse', {}, body));
+}
+
 function notFound() {
   return shell('MMRS — not found', frame('dash', {}, `<div class="topbar"><div><h1>Nothing here</h1>
 <p class="sub">That path does not exist.</p></div></div>
 <div class="card"><div class="card-b"><a href="/">Back to the dashboard</a></div></div>`));
 }
 
-module.exports = { shell, esc, dashboard, importPage, scanPage, signin, unconfigured, notFound };
+module.exports = { shell, esc, dashboard, importPage, scanPage, signin, unconfigured, notFound, familiesPage, familyPage };

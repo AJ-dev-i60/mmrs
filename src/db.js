@@ -157,8 +157,44 @@ const queueSummary = (importId) =>
   q(`SELECT priority, COUNT(*) AS n, SUM(est_tokens) AS tokens
      FROM work_queue WHERE import_id = ? GROUP BY priority ORDER BY priority DESC`).all(importId);
 
+/* ---------- browsing ---------- */
+
+// All families for an import. 667 rows is small enough to render in one page
+// and filter client-side, which beats paginating something you want to skim.
+const allFamilies = (importId) =>
+  q(`SELECT f.family, f.n_convos, f.n_messages, f.chars, f.est_tokens,
+            f.first_seen, f.last_seen, f.era, f.redundancy_pct,
+            w.status AS queue_status, w.priority
+     FROM families f
+     LEFT JOIN work_queue w ON w.import_id = f.import_id AND w.family = f.family
+     WHERE f.import_id = ? ORDER BY f.chars DESC`).all(importId);
+
+const familyDetail = (importId, family) =>
+  q('SELECT * FROM families WHERE import_id = ? AND family = ?').get(importId, family) || null;
+
+const familyConversations = (importId, family) =>
+  q(`SELECT id, title, is_branch, created, n_messages, chars
+     FROM conversations WHERE import_id = ? AND family = ?
+     ORDER BY created`).all(importId, family);
+
+const familyMessages = (importId, family) =>
+  q(`SELECT id, role, created, content_type, model, chars, text, seq
+     FROM messages WHERE import_id = ? AND family = ? ORDER BY seq`).all(importId, family);
+
+// Conversations per month, for the dashboard timeline.
+const monthHistogram = (importId) =>
+  q(`SELECT substr(created,1,7) AS month, COUNT(*) AS n
+     FROM conversations WHERE import_id = ? AND created IS NOT NULL
+     GROUP BY month ORDER BY month`).all(importId);
+
+const eraSplit = (importId) =>
+  q(`SELECT era, COUNT(*) AS n, SUM(est_tokens) AS tokens
+     FROM families WHERE import_id = ? GROUP BY era`).all(importId);
+
 module.exports = {
   open, q, now, DB_PATH, DATA_DIR,
+  allFamilies, familyDetail, familyConversations, familyMessages,
+  monthHistogram, eraSplit,
   createImport, getImport, listImports, setStatus, saveScan, failImport,
   clearCorpus, corpusStats, listFamilies, queueSummary,
 };

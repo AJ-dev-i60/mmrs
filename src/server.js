@@ -34,7 +34,12 @@ const safeReturnTo = (v) => (typeof v === 'string' && v.startsWith('/') && !v.st
 function statsFor(importId) {
   const s = db.corpusStats(importId);
   if (!s || !s.families) return null;
-  return { ...s, queueByPriority: db.queueSummary(importId) };
+  return {
+    ...s,
+    queueByPriority: db.queueSummary(importId),
+    era: db.eraSplit(importId),
+    top: db.allFamilies(importId).slice(0, 8),
+  };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -121,6 +126,27 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (p === '/import') return send(res, 200, page.importPage({ error: url.searchParams.get('error') }));
+
+    if (p === '/families') {
+      const latest = db.listImports().find((i) => i.status === 'ready');
+      if (!latest) return send(res, 404, page.notFound());
+      return send(res, 200, page.familiesPage({
+        importId: latest.id, families: db.allFamilies(latest.id), stats: db.corpusStats(latest.id),
+      }));
+    }
+
+    if ((m = p.match(/^\/family\/(.+)$/))) {
+      const latest = db.listImports().find((i) => i.status === 'ready');
+      if (!latest) return send(res, 404, page.notFound());
+      const family = decodeURIComponent(m[1]);
+      const detail = db.familyDetail(latest.id, family);
+      if (!detail) return send(res, 404, page.notFound());
+      return send(res, 200, page.familyPage({
+        family, detail,
+        conversations: db.familyConversations(latest.id, family),
+        messages: db.familyMessages(latest.id, family),
+      }));
+    }
 
     if ((m = p.match(/^\/scan\/([\w-]+)$/))) {
       const rec = db.getImport(m[1]);
