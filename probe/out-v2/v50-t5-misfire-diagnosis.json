@@ -1,0 +1,201 @@
+{
+  "family": "V50 T5 Misfire Diagnosis",
+  "elapsed_s": 105,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 25118,
+    "cache_read_input_tokens": 19048,
+    "output_tokens": 7846,
+    "output_tokens_details": {
+      "thinking_tokens": 2041
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 25118,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 7846,
+        "cache_read_input_tokens": 19048,
+        "cache_creation_input_tokens": 25118,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 25118
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_equiv_usd": 0.473133,
+  "summary": "A subtle misfire in a 2006 Volvo V50 T5 (B5254T3, P1 platform) was diagnosed over five months from an acoustic symptom — one cylinder audibly firing during deceleration fuel cut-off and at ~2% throttle — and traced to a leaking fuel injector rather than ignition. New coils and plugs changed nothing; a new PCV valve and diaphragm transformed boost and torque; replacing the leaking injector with a used genuine unit eliminated the misfire, with combined fuel economy improving from consistently above 10 L/100 km to 5.1 L/100 km on a downhill highway cruise. The thread then turned to a planned engine-out refresh, a Stage 1 tune target, and a decision not to lift the cylinder head.",
+  "verdict": "durable",
+  "topics": [
+    "volvo",
+    "misfire-diagnosis",
+    "fuel-injectors",
+    "engine-refresh",
+    "ecu-tuning",
+    "diagnostics-tools"
+  ],
+  "entities": [
+    "Volvo V50 T5",
+    "B5254T3",
+    "P1 platform",
+    "K04 turbo",
+    "VIDA",
+    "DiCE",
+    "iCarsoft VOL V3.0",
+    "Celtic Tuning",
+    "Power Pipes",
+    "Opel Corsa utility",
+    "Z16LEL"
+  ],
+  "findings": [
+    {
+      "type": "project",
+      "title": "Leaking injector found behind a subtle V50 T5 misfire",
+      "body": "A 2006 Volvo V50 T5 (B5254T3, ~190,000 km) had a misfire too subtle to hear through the standard exhaust. It became clearly audible as a soft popping from the exhaust once the system was disconnected at the first joint, with the catalytic converter still in place.\n\nThe distinguishing symptom was mode-dependent. Under full deceleration fuel cut-off in gear, with no throttle, the engine sounded perfectly smooth and even — no mechanical imbalance. Holding roughly 2% throttle during the same deceleration produced one cylinder firing noticeably louder than the others, and tipping in from fuel cut gave a rich rumble. That pattern — one cylinder firing when injection should be cut or near-cut, at very small injector duty cycles — points at fuelling rather than ignition, because ignition faults normally worsen under load, not at trailing throttle. There was no persistent check-engine light at any stage; the lamp only flashed at key-on position 2 and went out, which is the normal bulb/ECU self-test and should not be read as blink-coded fault codes.\n\nWork was carried out in stages over five months: new coil packs, new spark plugs, new PCV valve and diaphragm, oil and filter change. Coils and plugs changed nothing about the misfire. The PCV replacement produced the largest single change — boost came on strongly and torque became consistent — and gained almost 80 km of range on a tank on its own, but the misfire remained exactly as before. The misfire was finally eliminated by replacing the identified leaking injector with a genuine used unit sourced from a Volvo scrapyard. After the injector, the misfire was absent including on a cold start the following morning.\n\nCombined effect on economy: previously consistently above 10 L/100 km; afterwards a 100 km/h cruise-controlled, mostly slightly downhill highway run returned 5.1 L/100 km, with a realistic mixed-driving expectation of 8–9 L/100 km. A leaking injector does more than waste fuel — the closed-loop trims compensate globally for the one rich cylinder, pushing the other four leaner than ideal, so the whole fuelling strategy never settles.",
+      "confidence": 0.92,
+      "citations": [
+        1,
+        5,
+        7
+      ]
+    },
+    {
+      "type": "method",
+      "title": "Separating a leaking injector from an ignition misfire by ear on trailing throttle",
+      "body": "A leaking or dribbling injector can be distinguished from a coil or plug fault acoustically, without any diagnostic tool, by comparing two deceleration states.\n\nDisconnect the exhaust at the first joint, leaving the catalytic converter in place, so the exhaust pulses are audible individually. Then drive and listen in gear during deceleration:\n\n- Closed throttle, full fuel cut-off: all injectors are shut and all cylinders should be silent. A smooth, even tone here rules out mechanical imbalance — a bent valve, worn cam lobe or low compression would still be audible and felt.\n- Roughly 2% throttle held during the same deceleration, so injector pulse widths are at their smallest: if one cylinder is audibly firing louder than the others in this window, fuel is reaching that cylinder when it should not. An injector that fails to seal when closed dribbles into its cylinder, which fires while the others are effectively cut.\n\nThe reason the test works is that the fault appears only in an extremely narrow operating range — the transition back from fuel cut, and very low injection duty cycles. That is also why it can go undetected on OBD2 logs and may never set a persistent fault code; a leaking injector typically raises no CEL until misfires become frequent enough to threaten the catalytic converter.\n\nCorroborating checks, in order of usefulness: read per-cylinder misfire counters on a dealer-grade tool to identify which cylinder accumulates counts under light throttle; swap the suspect injector to another cylinder and see whether the symptom follows it (follows the injector = injector; stays on the cylinder = wiring or mechanical); pull the plugs and compare deposits, since the offending cylinder reads richer or wetter. Resistance measurement alone is insufficient — an injector that leaks mechanically can pass a resistance test, so a flow or leakdown test is what catches it.",
+      "confidence": 0.85,
+      "citations": [
+        1,
+        2,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "type": "decision",
+      "title": "Leaving a healthy cylinder head sealed during a preventative engine refresh",
+      "body": "When planning an engine-out refresh with no fault present, lifting the head purely for cleanliness is not worth it. Opening a known-good seal exchanges a factory joint that has proven itself for a new one that may or may not settle as well.\n\nThe conditions under which a head genuinely comes off are specific: a history of overheating (which is when a skim is warranted, because the head has warped), an actual gasket failure — combustion gases in coolant, emulsified oil, pressure spikes, misfires under boost — coolant loss, or uneven compression across cylinders. Absent any of these, the sealed head stays.\n\nResurfacing carries its own caveat. A light clean-up is fine when the head is already off for cause, but skimming a head that is already flat reduces combustion chamber volume and may require a correspondingly thicker gasket to keep compression in spec. It is not a casual operation.\n\nMileage and engine family change the calculus. On the 2006 V50 T5 at just under 190,000 km with a clean bill of health, the head stayed on and the refresh was confined to injectors, intake manifold and seals, PCV, hoses, timing set and ancillaries. On a 2007 Opel Corsa utility at over 320,000 km, a head-off refresh is far better justified — the small GM-family heads carbon up in a way the Volvo five-cylinder does not, and the cooling passages accumulate significant deposits by that mileage.",
+      "confidence": 0.82,
+      "citations": [
+        23,
+        24,
+        25
+      ]
+    },
+    {
+      "type": "decision",
+      "title": "Stage 1 as the target for a B5254T3, and why the modest number is the right one",
+      "body": "The factory V50 T5 (B5254T3) is rated at 162 kW and around 320 Nm. Celtic Tuning advertise up to 208 kW and 454 Nm, which represents the ceiling of what the stock K04 turbo and internals will give once the factory conservatism is removed. A realistic, long-life Stage 1 lands nearer 195–205 kW and 400–430 Nm; the target chosen here was more modest still, around 180 kW, on the reasoning that the value is in the reshaped torque curve and the driveability rather than the peak figure.\n\nThe reasoning rests on a directly comparable prior car: an Opel Corsa Turbo with the Z16LEL and a mild — most likely Stage 1 — tune, dyno-tested at 128 kW and 280 Nm at the wheels against a factory rating of 110 kW and 210 Nm. That is not a large absolute gain, but the change in power delivery was noticeable on every single drive and felt beyond OEM. The lesson carried forward is that on a small turbo engine the perceived transformation comes from earlier spool and a wider, flatter mid-range plateau, not from the headline peak.\n\nSupporting condition for tuning: high-quality oil with oil and filter changed every 10,000 km, which is what keeps rod bearings, turbo bearings and the PCV system healthy under raised boost.",
+      "confidence": 0.8,
+      "citations": [
+        13,
+        14,
+        15
+      ]
+    },
+    {
+      "type": "reference",
+      "title": "Known weak points worth addressing while a P1 T5 engine is out",
+      "body": "With the engine on a stand, the following are the items that eliminate chronic weak points on the P1 2.5T rather than chase power. They are grouped by why they matter, not by cost.\n\nCooling and thermal: the plastic thermostat housing is a known ageing part and the aluminium replacement is the standard upgrade. The turbo's coolant return line hardens and becomes reluctant to seal, and is trivially accessible only while the turbo is off the block.\n\nTurbo plumbing: the oil feed line cokes internally over time and partially restricts flow, which shortens turbo life — replace it with fresh genuine parts and new copper washers. The return line wants a new gasket and O-ring; its slow weep is commonly mistaken for a rear main seal leak. With the turbo in hand, check the wastegate flapper bush and arm for play before boost control problems appear.\n\nSealing: the rear main seal is the obvious one to do while access is free even if it is not leaking. Also the oil cooler gasket, cam seals and VVT hub seals. The sump is sealed with compound rather than a conventional gasket, so dropping it, checking for sludge and resealing properly is worthwhile — as is a clean oil pickup.\n\nMounts: the hydraulic engine mount on the timing-belt side typically gives up somewhere around 150,000–200,000 km, and the upper and lower torque mounts wear early. All are trivial with the engine out and awkward with it in.\n\nCrankcase ventilation: beyond the PCV valve and diaphragm, check the oil trap for clogging and the banjo bolt in the block underneath the intake manifold, plus the PCV fresh-air port and its small passages, which collect residue even after a diaphragm replacement.\n\nVacuum and charge: with the intake off, replace every small vacuum line — the turbo control valve hoses especially — since these cars use vacuum for boost control and idle stability, not just EVAP. The short turbo-to-hot-side rubber hose splits on its underside where it cannot be seen. A partially blocked catalytic converter is a quiet thief of top-end power.\n\nWear items that are cheap now and dramatic later: the starter motor, which lives in a hot pocket and becomes lazy, and the crank position sensor.\n\nTiming belt, tensioners, idlers and water pump are the natural companions to any engine-out job, since they are near-trivial with the engine on a stand.",
+      "confidence": 0.6,
+      "citations": [
+        11,
+        12,
+        14
+      ]
+    },
+    {
+      "type": "reference",
+      "title": "Diagnostic tools with full module access on a Volvo P1",
+      "body": "A generic OBD2 code reader will not reach the non-engine modules on a P1-platform Volvo (V50, S40, C30, C70 of that era). Two tools cover the gap at reasonable cost.\n\nVIDA plus DiCE is Volvo's own dealer-level setup — VIDA is the software, DiCE the interface. It gives access to every module (ECM, ABS, SRS, CEM, DIM, TCM), bi-directional control, live data, adaptation resets and calibration functions, and importantly for misfire work it exposes per-cylinder misfire counters, injector pulse widths, fuel trims and live lambda, and allows single-injector disable and cylinder balance testing. It needs a Windows laptop and a somewhat fiddly setup; VIDA 2014D is regarded as the most stable release, and it can be run from a preconfigured VM image. Clone DiCE interfaces vary considerably in quality and the very cheapest are best avoided.\n\nThe iCarsoft VOL V3.0 (successor to the i906) is the plug-and-play alternative: Volvo/Saab-specific, handheld, no laptop, reads and clears codes across ABS, airbag, transmission and other modules with live data and some resets. It is shallower — no bi-directional testing, no flashing, and it will not perform all adaptation resets or sensor calibrations.\n\nFor diagnosing a single-cylinder fuelling fault, the depth of VIDA is what earns its keep; the iCarsoft is the tool for keeping in the glovebox.",
+      "confidence": 0.65,
+      "citations": [
+        3,
+        4,
+        6
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "turn": 1,
+      "quote": "I'm thinking a spark plug or a coil issue wouldn't be doing this specifically, even though bad coils and/or bad spark plugs do cause misfires",
+      "note": "Rejects the obvious diagnosis before accepting it, states why"
+    },
+    {
+      "turn": 1,
+      "quote": "if I hold the throttle open a tiny bit (think ~2%) I can hear one cylinder firing noticably louder than the others",
+      "note": "Constructs a repeatable listening test to isolate the symptom"
+    },
+    {
+      "turn": 3,
+      "quote": "I don't want a normal generic reader to get codes, I want something that can dig deep into the computers of the volvo",
+      "note": "Specifies required depth of tooling, rejects the entry-level option"
+    },
+    {
+      "turn": 5,
+      "quote": "Check your facts before responding",
+      "note": "Explicitly instructs assistant to verify before answering"
+    },
+    {
+      "turn": 5,
+      "quote": "Nothing changed when I changed coils and plugs, but when I replaced the pcv valve and diaphragm that's when the biggest and most noticeable change happened",
+      "note": "Reports actual results including where his fix did nothing"
+    },
+    {
+      "turn": 7,
+      "quote": "I expect it to go up to roughly ~8-9L/100km when I put more kilometers on with various driving conditions",
+      "note": "Discounts a favourable measurement as unrepresentative of mixed driving"
+    },
+    {
+      "turn": 9,
+      "quote": "spend as much time as needed cleaning everything, the block, all the nooks and crannies",
+      "note": "States time is not the constraint on the refresh"
+    },
+    {
+      "turn": 13,
+      "quote": "which is a huge jump, and not something I'm trying to achieve, but definitely a bit more than the standard you know",
+      "note": "Rejects the advertised maximum power figure as a target"
+    },
+    {
+      "turn": 15,
+      "quote": "Honestly stage 1 sounds perfect to me, and I'll tell you why",
+      "note": "Justifies a preference from prior dyno-measured ownership experience"
+    },
+    {
+      "turn": 17,
+      "quote": "One thing I like to do is to disconnect the exhaust of a car at the first disconnection point and hear how it sounds without mufflers and restrictions (but with the cat in place)",
+      "note": "Describes a standing personal habit that produced the diagnosis"
+    },
+    {
+      "turn": 25,
+      "quote": "Ok cool. The head stays on then. Thanks.",
+      "note": "Abandons a planned job immediately on being advised against"
+    },
+    {
+      "turn": 27,
+      "quote": "Enough chat, I'm gonna go drive my Volvo 😁",
+      "note": "Ends the thread himself once the question is answered"
+    }
+  ],
+  "open_questions": [
+    "Outcome of sending the remaining four injectors for cleaning, refurbishment and new seals, and of the intake manifold removal, deep clean and gasket replacement",
+    "Which cylinder was the leaking injector, and by what test it was finally confirmed — whether a diagnostic tool was bought, and if so which",
+    "Whether the engine-out strip, clean and loom rework was ever undertaken, and which of the candidate upgrades were done",
+    "Whether the Stage 1 dyno tune happened and what it actually made",
+    "Whether the valved turbo-back exhaust was commissioned",
+    "The head-off refresh decision for the 2007 Opel Corsa utility at 320,000 km — explicitly deferred to a later conversation"
+  ]
+}

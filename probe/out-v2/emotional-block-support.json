@@ -1,0 +1,171 @@
+{
+  "family": "Emotional Block Support",
+  "elapsed_s": 46,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 32222,
+    "cache_read_input_tokens": 19048,
+    "output_tokens": 3319,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 32222,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 3319,
+        "cache_read_input_tokens": 19048,
+        "cache_creation_input_tokens": 32222,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 32222
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_equiv_usd": 0.43692400000000003,
+  "summary": "A thread in which the user brought a WhatsApp exchange with a female friend to ChatGPT, first to unblock himself after a conversation went badly wrong, then across a six-week arc: a friendship he unilaterally ended, her refusal to accept the ending, and a rapid turn into a romantic connection with explicit plans for a values-alignment conversation. The durable output was an emotional-communication cheat-sheet he requested for reuse, plus an 'assumption alignment' framework he himself proposed for stating unspoken expectations aloud.",
+  "verdict": "thin",
+  "topics": [
+    "emotional-communication",
+    "conflict-repair",
+    "relationships",
+    "christian-relationships",
+    "boundaries",
+    "attachment-patterns"
+  ],
+  "entities": [
+    "Psalm 139:16",
+    "Psalm 130",
+    "1 John 4",
+    "Proverbs 4:23",
+    "1 Thessalonians 4:3",
+    "Proverbs 29:11",
+    "Galatians 6:2,5",
+    "Proverbs 10:22",
+    "NIV",
+    "ESV"
+  ],
+  "findings": [
+    {
+      "type": "method",
+      "title": "Cheat-sheet for responding when someone opens up and you feel blocked",
+      "body": "A six-step sequence for the moment when someone shares something emotionally raw and you cannot think what to say.\n\n1. Pause out loud, not silently. Say \"I want to respond well, so I'm taking a moment to really hear you\" rather than going quiet. An unexplained delay reads as abandonment, especially to someone who already feels disposable.\n2. Validate before anything else. \"That sounds incredibly heavy\" or \"thank you for sharing this with me\" comes before clarification, humour or logic. Levity offered into a raw moment lands as detachment even when it is meant kindly.\n3. Reflect the emotion back. \"So it feels like you're carrying this alone?\" — a guess at the feeling shows you are trying, and is better than an accurate summary of the facts.\n4. Do not centre yourself yet. \"I don't know what to say\", \"I didn't mean it like that\" and \"I'm confused\" all move the subject from their pain to your discomfort. The test question: will this comment help them feel seen, or help me feel understood? If the latter, hold it.\n5. Clarify intent only after validation has landed.\n6. Offer support rather than solutions: \"would it help to talk more, or should I just sit with you in this?\"\n\nIf you slip up, name it fast — \"I think I missed the mark there\" — and redirect to them rather than explaining yourself.\n\nA further point specific to friendships where the two people's days are structured differently — one in full-time work, the other a student — is that peaks of busyness and emotional availability do not line up, so a reply written from task-focused headspace lands in someone else's raw moment. Name the difference rather than assume it is read, and set an explicit time to check in.",
+      "confidence": 0.7,
+      "citations": [
+        7,
+        9,
+        10,
+        15,
+        17
+      ]
+    },
+    {
+      "type": "method",
+      "title": "Assumption alignment conversation for a new relationship",
+      "body": "Where two people's core values line up closely, each will carry unstated assumptions about what the other believes and expects, and the closeness of the values is exactly what makes those assumptions invisible. The remedy is a scheduled conversation in which each person states their own assumptions aloud, so that the pair either confirm they are on the same page or surface a mismatch neither knew existed.\n\nStructure: each takes turns completing sentence stems in three areas — about the other person (\"I assume you believe…\", \"I assume you would struggle with…\"), about the relationship (\"I assume this is moving toward…\", \"I assume our physical boundaries are…\", \"I assume the timing of next steps looks like…\"), and about faith (\"I assume we both see God's Word as…\", \"I assume we are accountable to…\"). Each stated assumption gets one of three responses: agreement, correction (\"I understand why you thought that, but my view is…\"), or an honest deferral (\"I'm still figuring that out — can I come back to you after praying about it?\"). The aim is truthful overlap, not perfect overlap.\n\nThe boundaries portion covers emotional, physical and spiritual ground, and closes with who provides outside accountability and when the conversation gets revisited.",
+      "confidence": 0.65,
+      "citations": [
+        26,
+        27
+      ]
+    },
+    {
+      "type": "reference",
+      "title": "Emotional boundaries, with concrete examples",
+      "body": "An emotional boundary is a limit on how much emotional intimacy, dependence and vulnerability is wise at a given stage of a relationship — distinct from a physical boundary and less visible, but serving the same function of setting a sustainable pace.\n\nA worked statement: \"I want to be honest and emotionally present, but I won't rely on this relationship as my primary emotional support system right now. I will keep space for prayer, spiritual mentors and close friends to process deep struggles, so this connection can grow at a healthy pace.\" This guards against a false sense of commitment forming before there is clarity, against mutual emotional dependence for peace and worth, and against one person becoming the other's sole outlet.\n\nOther practical forms: pacing the depth of conversations and deliberately avoiding trauma-based bonding early on; refusing an \"us versus the world\" posture where the two become each other's only support; keeping emotionally intense conversations out of late nights so they are processed with clarity rather than exhaustion; and declining the rescuer role — praying with someone without taking on carrying their burdens.\n\nThe scriptural distinction underpinning the last point is Galatians 6, which sets \"carry each other's burdens\" alongside \"each one should carry their own load\" — help in love, without over-functioning for another person.",
+      "confidence": 0.6,
+      "citations": [
+        28,
+        29
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "turn": 6,
+      "quote": "I don't want to become reliant on AI or external help to try and respond in the most correct way or whatever, just wanted to get out of my own head with this because it's causing me a mental block",
+      "note": "States a limit on how he'll use AI; wants unblocking, not scripting"
+    },
+    {
+      "turn": 6,
+      "quote": "Can you focus on what I did wrong in my responses?",
+      "note": "Redirects from offered help toward critique of his own conduct"
+    },
+    {
+      "turn": 8,
+      "quote": "in my efforts to course-correct I made the conversation about myself, which is something I vehemently try to avoid doing at all costs, but ended up doing anyway so I stopped responding",
+      "note": "Names a personal rule he broke, and that he went silent afterwards"
+    },
+    {
+      "turn": 12,
+      "quote": "Let's not get to the final part just yet, I would like to do a summary of everything right at the end.",
+      "note": "Directs the shape and sequencing of the output he wants"
+    },
+    {
+      "turn": 12,
+      "quote": "I try to use as many opportunities as possible to practice communication and emotional skills for when I am eventually in a romantic relationship where not speaking for a day isn't an option",
+      "note": "Explains why he treats friendships as deliberate practice ground"
+    },
+    {
+      "turn": 12,
+      "quote": "I don't want to accept the fact that I know that silence is not the right thing here",
+      "note": "Acknowledges knowing the right move while resisting acting on it"
+    },
+    {
+      "turn": 14,
+      "quote": "No thank you.",
+      "note": "Declines offer to draft a message on his behalf"
+    },
+    {
+      "turn": 16,
+      "quote": "Something like a cheat-sheet that I can glance over when I feel this type of emotional blockage again",
+      "note": "Specifies output format: reusable glanceable reference, not prose"
+    },
+    {
+      "turn": 18,
+      "quote": "In your responses, I want you to have some pushback if you don't agree with something, don't just go with whatever I'm saying.",
+      "note": "Explicitly requests disagreement rather than agreement"
+    },
+    {
+      "turn": 22,
+      "quote": "I strongly distrust my emotions (and for good reasons) but before I've even had time to scrutinize how I feel and validate if my emotions are real or just circumstantial, my actions have already told me everything that I needed to know.",
+      "note": "States he treats his own actions as more reliable evidence than his feelings"
+    },
+    {
+      "turn": 22,
+      "quote": "It's never really been an option for me to do that, and whenever I did, it backfired in my face time after time. I definitely lack trust in that particular space",
+      "note": "Explains why he decides alone rather than jointly"
+    },
+    {
+      "turn": 24,
+      "quote": "She was then of course fully aware of my feelings towards her, and specifically why I exercised such caution in response to my feelings towards her.",
+      "note": "Returns after four days reporting an outcome opposite to his stated decision"
+    },
+    {
+      "turn": 24,
+      "quote": "I'd like to tell you everything but you will need to ask if you want more info.",
+      "note": "Withholds detail pending an explicit request"
+    },
+    {
+      "turn": 26,
+      "quote": "it would be very beneficial for us to state our own assumptions clearly so that we can (either) be at peace that we're on the same page across the board, or have a clear indicator that one person has an assumption or expectation that the other was not aware of",
+      "note": "Proposes his own framework rather than accepting the one offered"
+    }
+  ],
+  "open_questions": [
+    "Whether the assumption-alignment conversation actually happened after the two-week separation, and what it surfaced",
+    "Whether he wrote a personal emotional boundary statement to share, having asked for the examples but not the drafted statement"
+  ]
+}

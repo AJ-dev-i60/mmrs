@@ -1,0 +1,5 @@
+SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)
+    at parseFindings (/home/armandt/projects/mmrs/probe/run.js:36:15)
+    at /home/armandt/projects/mmrs/probe/run.js:58:24
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

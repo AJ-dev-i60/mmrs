@@ -1,0 +1,134 @@
+{
+  "family": "Proverbs 2 insights",
+  "elapsed_s": 108,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 16531,
+    "cache_read_input_tokens": 19048,
+    "output_tokens": 7510,
+    "output_tokens_details": {
+      "thinking_tokens": 2657
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 16531,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 7510,
+        "cache_read_input_tokens": 19048,
+        "cache_creation_input_tokens": 16531,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 16531
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_equiv_usd": 0.37257300000000004,
+  "summary": "A scripture-study thread that began with Proverbs 2:1–5 and moved to Proverbs 4:23, where the question was pressed from 'guard your heart' to 'by what specific means, and against what specific signs'. Out of Spurgeon's image of keeping the water pure at the source, the thread built a sustained working framework: a set of anomaly cues written as a security team's discernment manual, a nine-station map of the inner life, and a seven-section 'heart security protocol'. It closed with an explicit request for a counterweight once the introspection became too heavy.",
+  "verdict": "durable",
+  "topics": [
+    "scripture-study",
+    "proverbs",
+    "guarding-the-heart",
+    "discernment",
+    "spiritual-practice",
+    "metaphor-as-tool"
+  ],
+  "entities": [
+    "Proverbs 2:1-5",
+    "Proverbs 4:23",
+    "Charles Spurgeon",
+    "John Piper",
+    "Tim Keller",
+    "Dallas Willard",
+    "NIV",
+    "NKJV",
+    "NLT",
+    "AMP",
+    "The Message",
+    "Philippians 4:6-7",
+    "Jeremiah 17:9",
+    "Ephesians 6:14",
+    "lēb"
+  ],
+  "findings": [
+    {
+      "type": "study",
+      "title": "Proverbs 4:23 read as a question of method, not sentiment",
+      "body": "Proverbs 4:23 places an absolute priority on the heart — \"above all else\" (NIV), \"with all diligence\" (NKJV/AMP), \"keep vigilant watch\" (MSG). The reading taken here is that if something is ranked as the foremost protection over an entire life, the ranking is useless without a method: it demands knowing in detail what to do and what to stand against. That reframing — from a sentiment to an operational question — is what makes the verse usable.\n\nThe Hebrew *lēb* is not the seat of feeling in the modern sense but the control centre of will, desire, imagination and commitment; the verse is therefore about what governs a person, not about being emotionally careful.\n\nThe supporting passages sort cleanly into three functions, and the tri-fold structure is the reusable part:\n\n**What to keep out** — Psalm 119:11 (the word hidden in the heart as a preventative), Psalm 101:3 (refusing approval to what is vile), James 1:14–15 (desire conceiving, then sin, then death — the escalation chain), Proverbs 7:25 (not letting the heart turn onto a path), Psalm 51:10.\n\n**What to cultivate** — Philippians 4:6–7, where the peace of God is itself the thing that *guards* heart and mind, which puts the guarding partly outside one's own competence; Colossians 3:2; Psalm 73:26; Proverbs 3:5; Matthew 6:21 (treasure locates the heart, so the heart is steered by what is valued rather than by what is resolved); Ephesians 6:14, where the breastplate of righteousness is armour over the vital organs.\n\n**What the heart must not become** — Hebrews 3:12 (unbelieving and turning away), Jeremiah 17:9 (deceitful above all things — the guard cannot fully trust the thing it guards), Proverbs 28:14 (hardness), Romans 1:21 (darkened, confused reasoning following refusal to give thanks).",
+      "confidence": 0.75,
+      "citations": [
+        5,
+        6
+      ],
+      "counter_evidence": ""
+    },
+    {
+      "type": "method",
+      "title": "Anomaly cues for spotting heart-drift before it becomes obvious",
+      "body": "Spurgeon's image — guard the heart by keeping the water pure at the source rather than filtering downstream — was turned into a working diagnostic list. The brief was deliberately not a list of rules: an exhaustive do/don't list is impossible and impractical. What was wanted was the *type of thinking* to adopt, the shape of an early warning, something to check a gut feeling against when something feels wrong but has not yet named itself. The model is a control-room security team and a water-quality inspector: they do not eliminate every contaminant, they notice irregularities early.\n\nTwelve cue clusters, each with its symptom set:\n\n1. **Unauthorised personnel at the perimeter** — something good that arrived too fast; a person seeking influence without having demonstrated trustworthiness; an opportunity asking for more of the heart than its size warrants.\n2. **Door left slightly open** — a habit allowed to slide \"just this once\"; communion dropped for no particular reason; content or conversation that used to trouble the conscience now normalised.\n3. **Keycard left unattended** — emotional access granted before relational trust was earned; oversharing while lonely; flattery bypassing discernment.\n4. **Strange smell in the water** — wanting something more than God's will; being energised by attention that is not safe; attention drifting \"just a bit further\".\n5. **Colour change** — irritation as the default response; resentment putting down roots; gratitude quietly gone; cynicism starting to sound more realistic than faith.\n6. **Flickering console** — restlessness with no external cause; sudden defensiveness over small things; decisions being rushed.\n7. **Operator asleep at the monitor** — spiritual autopilot; curiosity about scripture gone; feeling \"fine\" without having examined anything.\n8. **Unauthorised downloads** — ideas that undermine identity; \"if it feels good it must be right\"; \"God wouldn't ask me to give that up\".\n9. **Someone testing a lock** — small compromises rising in frequency or boldness; rationalising what was previously avoided. The response is to cut the line of access, not to argue.\n10. **Water pressure dropping** — prayer feels like talking into a ceiling; worship is routine; scripture reads as text rather than revelation. Check the main valve rather than the gauge.\n11. **Contractor with fake credentials (false peace)** — a choice feels peaceful because it avoids conflict rather than because it is right; relief available at the price of a compromise. Measure peace against righteousness, not against comfort.\n12. **Backup generator running (self-reliance)** — operating on willpower rather than dependence; forcing outcomes; feeling responsible for everything; no longer asking for wisdom.\n\nThe common thread is that contamination announces itself as a faint aftertaste long before a colour change, so the discipline is noticing small anomalies and treating them as reportable rather than waiting for something undeniable.",
+      "confidence": 0.85,
+      "citations": [
+        7,
+        8
+      ],
+      "counter_evidence": ""
+    },
+    {
+      "type": "method",
+      "title": "Heart security protocol and the nine stations of the control room",
+      "body": "The cue list was extended into two artefacts: a standing protocol and a map of the room it applies to.\n\n**The protocol**, in seven sections. *Standard vigilance*: verify every arrival at the gate, since fast access should be rare and slow evaluation standard; keep sightlines clear, because unfinished conflicts and neglected duties are clutter that hides threats; recalibrate daily, on the principle that a heart drifts like a compass near magnets. *Contamination prevention*: bitterness, envy, lust, pride, fear and self-pity register as faint aftertastes first; containment is immediate and without shame or panic; seal spill zones so anger in one area does not poison joy in another. *Access management*: emotional access requires credentials, and even kind people can carry malware unintentionally; security intensifies at the known vulnerabilities — tiredness, loneliness, boredom, stress; any sudden rise in praise triggers an authentication check. *Intrusion response*: ask an arriving jealousy, shame or despair who sent it; do not negotiate with temptation, because negotiation is not part of the protocol and temptation feeds on conversation; conviction is the alarm system working correctly and is never to be silenced for being inconvenient. *Wellspring maintenance*: fix the pipe rather than adjusting the gauge; change filters, since old grudges and unresolved guilt clog filtration; protect the quiet, because noise distorts readings. *Reporting*: log small anomalies immediately, take them to God first and to wise believers second, and run no lone-operator missions — recovery outranks embarrassment, and the protocol awards no merit badges for pretending to be fine. *Continuous improvement*: review the footage of previous breaches for patterns, update countermeasures as temptations change, and celebrate clean water, treating gratitude as a security asset rather than a reward.\n\n**The stations.** At the centre is the spring interface, showing clarity, pressure, colour, flow rate and foreign particles — desire, motive and orientation. Around it: 1) the gatekeeper's desk, whose speciality is slowing things down before they enter; 2) the thought filter array, which also monitors the noise floor of the inner world; 3) the emotion regulator, which monitors rather than suppresses and alarms when a feeling spikes illogically or stays elevated too long; 4) the desire compass, tracking what is most wanted at any moment and pulsing quietly when the needle drifts toward an idol; 5) the memory vault, a library of past breaches and victories rather than a room of shame; 6) the dependence conduit, a column of light on which every other system's power depends; 7) the communication terminal, showing whether petition, confession, gratitude, lament and worship are flowing or jammed; 8) the boundary grid, mapping every moral, emotional and relational limit as green, yellow or red; 9) the peace field generator, a dome that strengthens under trust and flickers under anxiety. Every station is stated to work best when the heart is unhurried.\n\n**The framework needs a counterweight, and this is part of the method, not a footnote.** Working through it in one sitting was reported as very heavy — switching on fluorescent lights in a quiet room shows every unswept corner at once. The corrective is that introspection is a tool and not a permanent environment: the same room imagined at sunrise rather than under inspection, with the team calm because the source never runs dry. The load-bearing distinction is that the heart is not guarded by one's own competence — Philippians 4:6–7 has the peace of God doing the guarding — so the work is noticing, not upholding. The accompanying images are a spring fed from a deeper spring rather than a fortress under siege, and a garden with pruning, blooming and quiet-under-the-soil seasons, none of which indicate failure. Anyone using the protocol should schedule the counterweight alongside it rather than after the damage.",
+      "confidence": 0.85,
+      "citations": [
+        9,
+        10,
+        11,
+        12
+      ],
+      "counter_evidence": ""
+    },
+    {
+      "type": "trait",
+      "title": "Marks the boundary between scripture and commentary rather than forbidding commentary",
+      "body": "There is a standing instruction that scripture be given verbatim, across multiple translations, without paraphrase or interpretation, with other passages brought in only to illuminate the text. The instruction is strong enough that a request to \"analyse\" a verse triggered a clarifying question before any content was produced.\n\nThe operative point is not that outside teaching is unwelcome. When asked, he explicitly opened the door to sermons and other resources — on the condition that they be clearly marked as external and not directly scriptural. What is being protected is the boundary, not the perimeter: he wants to know at every line which authority he is reading. In practice, the external material then became the most productive part of the thread, since Spurgeon's fountain image is what the whole framework was built on.",
+      "confidence": 0.8,
+      "citations": [
+        2,
+        4,
+        5,
+        6
+      ],
+      "counter_evidence": "The rule was relaxed on his own initiative in the same thread, and the two largest requests that followed — the discernment cue list and the control room — are entirely non-scriptural imaginative constructions that he asked for and called excellent. A stricter reading of 'no interpretation' would have ruled those out. So the constraint is about labelling and sequencing, not about restricting the material; anyone reading it as scripture-only would be wrong."
+    },
+    {
+      "type": "trait",
+      "title": "Specifies the output he wants by writing worked examples of it",
+      "body": "When an abstraction needs to be made operational, the request comes with sample outputs rather than a description of the desired format. Asking for discernment cues, he supplied four fully-formed examples in the target register — the door left open and who to remind, the unattended keycard and who to report it to, the water that tastes or smells different, the slight colour change and the test to run — and paired them with an explicit statement of what he did *not* want: not a literal or exhaustive do/don't list, which he judged impossible and impractical. He also named the plain-language purpose behind the artefact: something to check a gut feeling against when something feels wrong.\n\nThe effect is that the constraints are stated as a shape rather than as adjectives, and the returned work needed no correction on either round.",
+      "confidence": 0.7,
+      "citations": [
+        5,
+        7,
+        9
+      ],
+      "counter_evidence": "The opening of the same request was the bare four words \"Let's analyze proverbs 4:23\" with no format given at all, which produced a clarifying question rather than an answer — so the worked-example habit appears on the second attempt, after an underspecified first pass, not by default. The pattern is also drawn from a single thread with two instances."
+    }
+  ],
+  "open_questions": [
+    "Which questions Proverbs 2:1–5 actually answered for him — he was asked directly in turn 2 and the thread moved on without him saying.",
+    "The Piper, Keller, Spurgeon and Willard attributions are loose paraphrases with no source given; the Spurgeon fountain line in particular is load-bearing for the whole framework and should be traced to an actual sermon or text before it goes into the wiki.",
+    "Four follow-up artefacts were offered and never built: a daily check-in ritual for the control room, an incident report form for when something gets past the defences, a map of typical breach patterns (lust, anger, fear, pride, apathy) as they appear on the sensors, and a short reset ritual for when the introspective work becomes too intense.",
+    "A 'scriptural definition' of guarding the heart stitched together only from the verses quoted, with no commentary, was offered and not taken up — that would satisfy the verbatim-only preference most directly.",
+    "Proverbs 4 in its wider context, which surrounds verse 23 and was offered as an alternative direction."
+  ]
+}

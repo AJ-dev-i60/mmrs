@@ -84,6 +84,57 @@ CREATE TABLE IF NOT EXISTS work_queue (
   PRIMARY KEY (import_id, family)
 );
 
+-- One row per family successfully extracted. Findings and markers hang off it.
+CREATE TABLE IF NOT EXISTS extractions (
+  import_id   TEXT NOT NULL,
+  family      TEXT NOT NULL,
+  verdict     TEXT,
+  summary     TEXT,
+  topics      TEXT,
+  entities    TEXT,
+  open_questions TEXT,
+  model       TEXT,
+  elapsed_ms  INTEGER,
+  usage_json  TEXT,
+  created_at  TEXT NOT NULL,
+  PRIMARY KEY (import_id, family)
+);
+
+CREATE TABLE IF NOT EXISTS findings (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  import_id  TEXT NOT NULL,
+  family     TEXT NOT NULL,
+  type       TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  confidence REAL,
+  citations  TEXT,
+  created_at TEXT NOT NULL
+);
+
+-- Observations, not conclusions. Read later, in bulk, by the portrait pass.
+CREATE TABLE IF NOT EXISTS markers (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  import_id  TEXT NOT NULL,
+  family     TEXT NOT NULL,
+  turn       INTEGER,
+  quote      TEXT NOT NULL,
+  note       TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS runs (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  import_id   TEXT NOT NULL,
+  status      TEXT NOT NULL,          -- running|stopped|finished|failed
+  started_at  TEXT NOT NULL,
+  stopped_at  TEXT,
+  note        TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_find_family ON findings(import_id, family);
+CREATE INDEX IF NOT EXISTS idx_mark_family ON markers(import_id, family);
+CREATE INDEX IF NOT EXISTS idx_find_type   ON findings(import_id, type);
 CREATE INDEX IF NOT EXISTS idx_msg_family  ON messages(import_id, family, seq);
 CREATE INDEX IF NOT EXISTS idx_conv_family ON conversations(import_id, family);
 CREATE INDEX IF NOT EXISTS idx_wq_status   ON work_queue(status, priority DESC);
@@ -191,8 +242,102 @@ const eraSplit = (importId) =>
   q(`SELECT era, COUNT(*) AS n, SUM(est_tokens) AS tokens
      FROM families WHERE import_id = ? GROUP BY era`).all(importId);
 
+/* ---------- extraction ---------- */
+
+// Claim the highest-priority pending family, atomically enough for one worker.
+function claimNext(importId) {
+  const d = open();
+  d.exec('BEGIN IMMEDIATE');
+  try {
+    const row = d.prepare(`SELECT family FROM work_queue
+      WHERE import_id = ? AND status = 'pending'
+      ORDER BY priority DESC, est_tokens ASC LIMIT 1`).get(importId);
+    if (!row) { d.exec('COMMIT'); return null; }
+    d.prepare(`UPDATE work_queue SET status='running', claimed_at=?, attempts=attempts+1
+               WHERE import_id=? AND family=?`).run(now(), importId, row.family);
+    d.exec('COMMIT');
+    return row.family;
+  } catch (e) { d.exec('ROLLBACK'); throw e; }
+}
+
+function saveExtraction(importId, family, result, meta) {
+  const d = open();
+  d.exec('BEGIN');
+  try {
+    d.prepare('DELETE FROM findings WHERE import_id=? AND family=?').run(importId, family);
+    d.prepare('DELETE FROM markers  WHERE import_id=? AND family=?').run(importId, family);
+    d.prepare(`INSERT OR REPLACE INTO extractions
+      (import_id, family, verdict, summary, topics, entities, open_questions, model, elapsed_ms, usage_json, created_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(
+      importId, family, result.verdict || null, result.summary || null,
+      JSON.stringify(result.topics || []), JSON.stringify(result.entities || []),
+      JSON.stringify(result.open_questions || []),
+      meta.model || null, meta.elapsed_ms || null, JSON.stringify(meta.usage || {}), now());
+
+    const fi = d.prepare(`INSERT INTO findings
+      (import_id, family, type, title, body, confidence, citations, created_at) VALUES (?,?,?,?,?,?,?,?)`);
+    for (const f of result.findings || []) {
+      fi.run(importId, family, f.type || 'reference', f.title || '(untitled)', f.body || '',
+        f.confidence == null ? null : Number(f.confidence), JSON.stringify(f.citations || []), now());
+    }
+    const mk = d.prepare(`INSERT INTO markers
+      (import_id, family, turn, quote, note, created_at) VALUES (?,?,?,?,?,?)`);
+    for (const m of result.markers || []) {
+      mk.run(importId, family, m.turn == null ? null : Number(m.turn), m.quote || '', m.note || '', now());
+    }
+    d.prepare(`UPDATE work_queue SET status='done', completed_at=?, note=NULL
+               WHERE import_id=? AND family=?`).run(now(), importId, family);
+    d.exec('COMMIT');
+  } catch (e) { d.exec('ROLLBACK'); throw e; }
+}
+
+const releaseFamily = (importId, family, note) =>
+  q(`UPDATE work_queue SET status='pending', claimed_at=NULL, note=? WHERE import_id=? AND family=?`)
+    .run((note || '').slice(0, 500), importId, family);
+
+const failFamily = (importId, family, note) =>
+  q(`UPDATE work_queue SET status=CASE WHEN attempts >= 3 THEN 'failed' ELSE 'pending' END,
+       claimed_at=NULL, note=? WHERE import_id=? AND family=?`)
+    .run((note || '').slice(0, 500), importId, family);
+
+const extractionProgress = (importId) =>
+  q(`SELECT status, COUNT(*) AS n, SUM(est_tokens) AS tokens
+     FROM work_queue WHERE import_id=? GROUP BY status`).all(importId);
+
+const findingsSummary = (importId) =>
+  q(`SELECT type, COUNT(*) AS n FROM findings WHERE import_id=? GROUP BY type ORDER BY n DESC`).all(importId);
+
+const recentExtractions = (importId, limit = 12) =>
+  q(`SELECT e.family, e.verdict, e.elapsed_ms, e.created_at,
+            (SELECT COUNT(*) FROM findings f WHERE f.import_id=e.import_id AND f.family=e.family) AS n_findings,
+            (SELECT COUNT(*) FROM markers  m WHERE m.import_id=e.import_id AND m.family=e.family) AS n_markers
+     FROM extractions e WHERE e.import_id=? ORDER BY e.created_at DESC LIMIT ?`).all(importId, limit);
+
+const totals = (importId) =>
+  q(`SELECT (SELECT COUNT(*) FROM findings WHERE import_id=?) AS findings,
+            (SELECT COUNT(*) FROM markers  WHERE import_id=?) AS markers,
+            (SELECT COUNT(*) FROM extractions WHERE import_id=?) AS extracted`).get(importId, importId, importId);
+
+const startRun = (importId) => {
+  q(`UPDATE runs SET status='stopped', stopped_at=? WHERE import_id=? AND status='running'`).run(now(), importId);
+  q(`INSERT INTO runs (import_id, status, started_at) VALUES (?,'running',?)`).run(importId, now());
+  return q('SELECT * FROM runs WHERE import_id=? ORDER BY id DESC LIMIT 1').get(importId);
+};
+const stopRun = (importId, note) =>
+  q(`UPDATE runs SET status='stopped', stopped_at=?, note=? WHERE import_id=? AND status='running'`)
+    .run(now(), note || null, importId);
+const activeRun = (importId) =>
+  q(`SELECT * FROM runs WHERE import_id=? AND status='running' ORDER BY id DESC LIMIT 1`).get(importId) || null;
+// A worker crash can leave a family 'running' with nobody working it.
+const releaseStale = (importId) =>
+  q(`UPDATE work_queue SET status='pending', claimed_at=NULL
+     WHERE import_id=? AND status='running'`).run(importId).changes;
+
 module.exports = {
   open, q, now, DB_PATH, DATA_DIR,
+  claimNext, saveExtraction, releaseFamily, failFamily, releaseStale,
+  extractionProgress, findingsSummary, recentExtractions, totals,
+  startRun, stopRun, activeRun,
   allFamilies, familyDetail, familyConversations, familyMessages,
   monthHistogram, eraSplit,
   createImport, getImport, listImports, setStatus, saveScan, failImport,

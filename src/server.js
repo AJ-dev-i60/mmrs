@@ -5,6 +5,7 @@ const oidcMod = require('./oidc');
 const page = require('./page');
 const db = require('./db');
 const imports = require('./import');
+const worker = require('./worker');
 
 const PORT = Number(process.env.PORT) || 3000;
 const VERSION = process.env.MMRS_VERSION || '0.3.0';
@@ -54,6 +55,7 @@ const server = http.createServer(async (req, res) => {
     } catch (e) { corpus = { error: e.message }; }
     return json(res, 200, {
       ok: true, version: VERSION, commit: COMMIT, auth: MODE,
+      extractor_ready: Boolean(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.ANTHROPIC_API_KEY),
       started: STARTED.toISOString(), uptime_s: Math.floor(process.uptime()), corpus,
     });
   }
@@ -118,11 +120,38 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ...rec, scan_json: undefined, scan: rec.scan_json ? JSON.parse(rec.scan_json) : null });
     }
 
+    if (p === '/api/run' && req.method === 'GET') {
+      const latest = db.listImports().find((i) => i.status === 'ready');
+      if (!latest) return json(res, 404, { error: 'no ready import' });
+      return json(res, 200, {
+        worker: worker.status(),
+        progress: db.extractionProgress(latest.id),
+        totals: db.totals(latest.id),
+        recent: db.recentExtractions(latest.id, 8),
+      });
+    }
+    if ((m = p.match(/^\/api\/run\/(start|stop)$/)) && req.method === 'POST') {
+      const latest = db.listImports().find((i) => i.status === 'ready');
+      if (!latest) return json(res, 400, { error: 'no ready import' });
+      const r = m[1] === 'start' ? worker.start(latest.id) : worker.stop(latest.id);
+      const wantsJson = (req.headers.accept || '').includes('application/json');
+      return wantsJson ? json(res, r.ok ? 200 : 409, r) : redirect(res, '/');
+    }
+
     /* ---------- pages ---------- */
     if (p === '/') {
       const list = db.listImports();
       const latest = list[0];
-      return send(res, 200, page.dashboard({ imports: list, stats: latest ? statsFor(latest.id) : null, user }));
+      const ready = list.find((i) => i.status === 'ready');
+      return send(res, 200, page.dashboard({
+        imports: list, stats: latest ? statsFor(latest.id) : null, user,
+        run: ready ? {
+          extractorReady: Boolean(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.ANTHROPIC_API_KEY),
+          worker: worker.status(), progress: db.extractionProgress(ready.id),
+          totals: db.totals(ready.id), recent: db.recentExtractions(ready.id, 6),
+          findingTypes: db.findingsSummary(ready.id),
+        } : null,
+      }));
     }
 
     if (p === '/import') return send(res, 200, page.importPage({ error: url.searchParams.get('error') }));
@@ -167,6 +196,12 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   try { db.open(); } catch (e) { console.error('[mmrs] DB open failed:', e.message); }
+  // HOME lives on the volume so the Claude CLI's state survives redeploys, but
+  // the volume is empty on first boot and the CLI will not create it.
+  try { require('fs').mkdirSync(process.env.HOME || '/data/home', { recursive: true }); } catch {}
+  const hasToken = Boolean(process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.ANTHROPIC_API_KEY);
+  if (!hasToken) console.warn('[mmrs] no CLAUDE_CODE_OAUTH_TOKEN — extraction will fail until it is set');
+  if (process.env.MMRS_WORKER !== '0') setTimeout(() => worker.resumeIfInterrupted(), 1500);
   const note = { oidc: `Pocket-ID (${process.env.OIDC_ISSUER})`, passcode: 'passcode (transitional)',
     none: 'NONE — serving 503' }[MODE];
   console.log(`[mmrs] v${VERSION} (${COMMIT}) on ${PORT} | auth: ${note} | data: ${db.DATA_DIR}`);

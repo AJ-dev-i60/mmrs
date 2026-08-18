@@ -1,0 +1,109 @@
+{
+  "family": "Kettle cleaning methods",
+  "elapsed_s": 23,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 10556,
+    "cache_read_input_tokens": 19048,
+    "output_tokens": 1496,
+    "output_tokens_details": {
+      "thinking_tokens": 0
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 10556,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 1496,
+        "cache_read_input_tokens": 19048,
+        "cache_creation_input_tokens": 10556,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 10556
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_equiv_usd": 0.15830899999999998,
+  "summary": "A short domestic thread about descaling an electric kettle (glass sides, metal base), covering why acids work on limescale and alkalis don't, the practical differences between citric acid and vinegar, whether a spent vinegar solution can be re-boiled, and finally whether vinegar and bicarb have any joint use. He reported back that scrubbing with a long-handled kitchen brush while the vinegar solution was still in the kettle cleared it completely.",
+  "verdict": "thin",
+  "topics": [
+    "descaling",
+    "limescale",
+    "household cleaning",
+    "kitchen chemistry"
+  ],
+  "entities": [
+    "citric acid",
+    "white vinegar",
+    "sodium bicarbonate",
+    "calcium carbonate",
+    "acetic acid"
+  ],
+  "findings": [
+    {
+      "type": "method",
+      "title": "Descaling a glass-and-metal kettle with vinegar plus a long-handled brush",
+      "body": "Kettle scale is calcium carbonate and dissolves in acid, not alkali — so vinegar or citric acid works and bicarbonate of soda does not. Mixing vinegar and bicarb is actively counterproductive for scale, because the two neutralise each other and leave salty water.\n\nOn a kettle with glass walls and a metal base, the effective sequence was: fill halfway with a water-and-white-vinegar solution, boil, leave to soak, then agitate the inside surfaces with a long-handled kitchen brush while the solution is still in the kettle. The soak undercuts the bond between the scale and the surface; the brush supplies just enough mechanical action to sweep the loosened deposits off without abrading anything. Neither step alone produced the result — acid alone was working but slowly, and it was the addition of light brushing that cleared it completely.\n\nThe same vinegar solution can be re-boiled once while it is still active; the signs it is spent are a milky or cloudy appearance, flakes or sludge settling out, and the vinegar smell fading — at that point the acid has been consumed by the calcium carbonate and further boiling does nothing. Finish by rinsing and boiling plain water once or twice to clear residual acetic acid and dissolved salts.\n\nCitric acid is the better reagent where available: as a powder it can be dosed by weight for repeatable strength, it is triprotic so binds calcium more effectively than 5–6% acetic acid, it works faster, and it leaves no lingering smell in lids, spouts and seals. Vinegar is acceptable but slower and needs extra rinse boils. Vinegar and bicarb do have a legitimate joint use where the fizz itself does mechanical work — dislodging loose debris in a drain, or lifting dirt out of crevices — but that is the bubbles, not chemistry.",
+      "confidence": 0.6,
+      "citations": [
+        4,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        14
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "turn": 3,
+      "quote": "Someone said to use baking soda or something like that. Is this wrong?",
+      "note": "Brings received advice back for verification rather than acting on it"
+    },
+    {
+      "turn": 5,
+      "quote": "I think it's scale that I'm trying to get rid of, not sure",
+      "note": "States uncertainty about his own diagnosis explicitly"
+    },
+    {
+      "turn": 7,
+      "quote": "What's the difference between citric acid and vinegar",
+      "note": "Asks for the comparison behind the recommendation, not just the recommendation"
+    },
+    {
+      "turn": 9,
+      "quote": "The vinegar method started to work. Can I just boil the solution again once or twice or must it be discarded",
+      "note": "Returns mid-task with a progress report and an efficiency question"
+    },
+    {
+      "turn": 11,
+      "quote": "I used a long handle kitchen brush and brushed the inside of the kettle with the vinegar solution in there and it cleared up completely",
+      "note": "Reports improvising a step beyond the given instructions"
+    },
+    {
+      "turn": 11,
+      "quote": "This is insane, I can't believe how well it worked. The kettle looks brand new",
+      "note": "Expresses strong satisfaction at the result"
+    },
+    {
+      "turn": 13,
+      "quote": "Is there any use for vinegar and bicarb together?",
+      "note": "Follows up on a debunked method to find where it does apply"
+    }
+  ],
+  "open_questions": []
+}

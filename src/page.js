@@ -256,7 +256,73 @@ function statPill(status) {
   return `<span class="pill ${cls}">${cls === 'ok' ? '<span class="beacon"></span>' : ''}${esc(label)}</span>`;
 }
 
-function dashboard({ imports, stats, user }) {
+function runPanel(run) {
+  if (!run) return '';
+  const w = run.worker || {};
+  const byStatus = Object.fromEntries((run.progress || []).map((r) => [r.status, r]));
+  const total = (run.progress || []).reduce((a, r) => a + r.n, 0) || 1;
+  const doneN = (byStatus.done || {}).n || 0;
+  const runN = (byStatus.running || {}).n || 0;
+  const failN = (byStatus.failed || {}).n || 0;
+  const pct = (x) => (100 * x / total).toFixed(1);
+
+  if (!run.extractorReady) {
+    return `<div class="card" style="margin-top:14px"><div class="card-h"><h2>Extraction</h2>
+<span class="pill hold">Not configured</span></div><div class="card-b">
+<p style="margin:0">The worker has no credential, so it cannot call Claude. Run
+<code>claude setup-token</code> on the workstation and set the result as
+<code>CLAUDE_CODE_OAUTH_TOKEN</code> in Coolify.</p>
+<p class="note">Everything else works without it — the corpus is built and readable.
+Extraction is the only stage that needs a Claude credential.</p></div></div>`;
+  }
+  const st = w.running
+    ? (w.pausedUntil ? `<span class="pill hold">Paused — quota</span>` : `<span class="pill ok"><span class="beacon"></span>Extracting</span>`)
+    : `<span class="pill idle">Idle</span>`;
+
+  return `<div class="card" style="margin-top:14px" id="runcard">
+<div class="card-h"><h2>Extraction</h2><div style="display:flex;gap:9px;align-items:center">${st}
+<form method="POST" action="/api/run/${w.running ? 'stop' : 'start'}" style="display:inline">
+<button class="btn ${w.running ? 'ghost' : ''} sm" type="submit">${w.running ? 'Stop after this one' : 'Start extraction'}</button></form>
+</div></div><div class="card-b">
+<div class="bigbar">
+<i class="s-done" style="width:${pct(doneN)}%"></i>
+<i class="s-prop" style="width:${pct(runN)}%"></i>
+<i class="s-wait" style="width:${pct(failN)}%"></i>
+</div>
+<div class="legend">
+<span><i class="swatch" style="background:var(--done)"></i>${n(doneN)} done</span>
+<span><i class="swatch" style="background:var(--accent)"></i>${n(runN)} running</span>
+${failN ? `<span><i class="swatch" style="background:var(--wait)"></i>${n(failN)} failed</span>` : ''}
+<span><i class="swatch" style="background:var(--panel-2);border:1px solid var(--line-2)"></i>${n((byStatus.pending || {}).n || 0)} queued</span>
+</div>
+
+<div class="grid g3" style="margin-top:16px">
+<div><div class="k" style="font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600">Findings</div>
+<div class="v" style="font-size:22px;margin-top:4px">${n((run.totals || {}).findings || 0)}</div></div>
+<div><div class="k" style="font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600">Markers</div>
+<div class="v" style="font-size:22px;margin-top:4px">${n((run.totals || {}).markers || 0)}</div></div>
+<div><div class="k" style="font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:600">Families read</div>
+<div class="v" style="font-size:22px;margin-top:4px">${n((run.totals || {}).extracted || 0)}</div></div>
+</div>
+
+${w.current ? `<p class="note"><b>Now reading:</b> ${esc(w.current)}${w.currentFor_s != null ? ` — ${w.currentFor_s}s` : ''}</p>` : ''}
+${w.lastError ? `<p class="note warn"><b>Last issue:</b> ${esc(w.lastError)}</p>` : ''}
+
+${(run.recent || []).length ? `<div class="tw" style="margin-top:16px"><table>
+<thead><tr><th>Recently read</th><th>Verdict</th><th class="n">Findings</th><th class="n">Markers</th><th class="n">Took</th></tr></thead>
+<tbody>${run.recent.map((r) => `<tr><td><a href="/family/${encodeURIComponent(r.family)}" style="color:var(--ink);text-decoration:none">${esc(r.family)}</a></td>
+<td>${esc(r.verdict || '')}</td><td class="n">${n(r.n_findings)}</td><td class="n">${n(r.n_markers)}</td>
+<td class="n">${r.elapsed_ms ? Math.round(r.elapsed_ms / 1000) + 's' : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
+
+${(run.findingTypes || []).length ? `<div class="legend" style="margin-top:14px">${
+  run.findingTypes.map((t) => `<span><b style="color:var(--ink)">${n(t.n)}</b>&nbsp;${esc(t.type)}</span>`).join('')}</div>` : ''}
+
+<p class="note">This runs on the server. <b>You can close this window</b> — it keeps going, pauses itself
+when the Claude quota window fills, and picks up where it left off. Nothing is written to Outline.</p>
+</div></div>`;
+}
+
+function dashboard({ imports, stats, user, run }) {
   const latest = imports[0] || null;
   const cur = latest ? {
     import: `${esc(latest.filename)} · ${mb(latest.bytes)}`, s1: 'done',
@@ -285,6 +351,8 @@ ${stats && stats.families ? `<div class="grid g4">
 <div class="card stat"><div class="k">Corpus</div><div class="v">${(stats.tokens / 1e6).toFixed(2)}<span style="font-size:15px">M</span></div><div class="d">estimated tokens</div></div>
 <div class="card stat"><div class="k">Queued</div><div class="v">${n((stats.queue.find((q) => q.status === 'pending') || {}).n || 0)}</div><div class="d">awaiting extraction</div></div>
 </div>` : ''}
+
+${runPanel(run)}
 
 ${stats && stats.families ? `<div class="grid g2" style="margin-top:14px">
 <div class="card"><div class="card-h"><h2>Biggest threads</h2>
@@ -326,7 +394,20 @@ ${imports.some((i) => i.error) ? `<p class="note warn"><b>Last error:</b> ${esc(
     : `Extraction and review are not built yet. Everything before them is free and spends no Claude quota,
        which is why it comes first.`}</p>`;
 
-  return shell('MMRS Console', frame('dash', cur, body));
+  const script = (run && run.worker && run.worker.running)
+    ? `setInterval(async () => {
+         try {
+           const r = await fetch('/api/run', {headers:{Accept:'application/json'}});
+           if (!r.ok) return;
+           const d = await r.json();
+           if (!d.worker.running) return location.reload();
+           document.title = 'MMRS — ' + (d.totals.extracted||0) + '/' + ${JSON.stringify(
+             (run.progress || []).reduce((a, r2) => a + r2.n, 0))};
+           location.reload();
+         } catch {}
+       }, 20000);`
+    : null;
+  return shell('MMRS Console', frame('dash', cur, body), script ? { script } : {});
 }
 
 function importPage({ error }) {

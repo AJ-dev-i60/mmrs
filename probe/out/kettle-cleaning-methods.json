@@ -1,0 +1,73 @@
+{
+  "family": "Kettle cleaning methods",
+  "elapsed_s": 39,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 13138,
+    "cache_read_input_tokens": 16011,
+    "output_tokens": 2448,
+    "output_tokens_details": {
+      "thinking_tokens": 1434
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 13138,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 2448,
+        "cache_read_input_tokens": 16011,
+        "cache_creation_input_tokens": 13138,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 13138
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_equiv_usd": 0.2060575,
+  "summary": "A domestic descaling question that ran from general method to a confirmed result: he has a glass-sided, metal-based kettle with limescale, was told acid (vinegar or citric acid) is the correct chemistry and that bicarbonate of soda is the wrong tool for scale, and cleared it completely by boiling a vinegar solution and then agitating the inside with a long-handled kitchen brush. The rest of the thread is standard household chemistry — acetic vs citric acid, and why vinegar plus bicarb neutralise each other — that any search would return.",
+  "verdict": "thin",
+  "topics": [
+    "descaling",
+    "household cleaning",
+    "limescale"
+  ],
+  "entities": [
+    "glass-and-metal electric kettle",
+    "white vinegar (acetic acid ~5–6%)",
+    "citric acid",
+    "bicarbonate of soda",
+    "long-handled kitchen brush"
+  ],
+  "findings": [
+    {
+      "type": "method",
+      "title": "Descaling the glass-and-metal kettle with vinegar and a long-handled brush",
+      "body": "Half-fill the kettle with equal parts white vinegar and water, boil once, switch off and leave to soak 20–30 minutes. Then work the inside over with a long-handled kitchen brush while the solution is still in the kettle — the soak undercuts the bond between the scale and the surface, and very light mechanical agitation lifts the loosened deposits off. Done this way the kettle came out completely clear, glass and metal base alike, with no abrasion. Finish by rinsing well and boiling one or two changes of plain water to carry off residual acid and dissolved salts.\n\nWhether the solution is still worth re-boiling is judged by look and smell, not by count. If the vinegar smell is still sharp and the liquid is clear, the acid is unspent — re-boil and soak again. If it has gone milky or cloudy, has flakes or sludge settled at the bottom, or the smell has faded, the acid has been neutralised by the calcium carbonate and further boiling only heats water; tip it and mix fresh. One re-boil is nearly always worthwhile, a third only if the solution still tests active.\n\nCitric acid powder is the better reagent if it is to hand — faster, dosed by the spoon so results repeat, no lingering odour in the lid and spout, and gentler on the metal base over repeated use. Vinegar is simply the version that works with what is in the cupboard. Bicarbonate of soda is the wrong tool for this job in either case: scale is calcium carbonate and dissolves in acid, and mixing bicarb into vinegar cancels both.",
+      "confidence": 0.45,
+      "citations": [
+        5,
+        6,
+        9,
+        10,
+        11,
+        12
+      ],
+      "counter_evidence": ""
+    }
+  ],
+  "open_questions": [
+    "How hard is the water where he lives — that determines whether the suggested 1–2 month descaling cadence is right or overkill.",
+    "Whether he can source citric acid powder locally, which would make future descaling faster and odour-free."
+  ]
+}
