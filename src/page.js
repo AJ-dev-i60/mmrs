@@ -213,6 +213,33 @@ font-size:14px;font-weight:600;color:var(--ink)}
 .typechip.research  b{color:var(--done)}
 .typechip.howto     b{color:var(--done)}
 
+/* Domain colours. Deliberately muted — the split matters, not the hue. */
+.d-technology{background:#3b82f6}.d-making{background:#b45309}.d-science{background:#0d9488}
+.d-body{background:#c2410c}.d-work{background:#7c3aed}.d-people{background:#db2777}
+.d-meaning{background:#65a30d}.d-living{background:#0891b2}
+.dom{margin:10px 0 4px}
+.dombar{display:flex;height:5px;border-radius:3px;overflow:hidden;background:var(--panel-2)}
+.dombar i{display:block;height:100%}
+.domlabels{display:flex;flex-wrap:wrap;gap:12px;margin-top:7px}
+.domlabels a{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);text-decoration:none}
+.domlabels a:hover{color:var(--ink)}
+.domlabels b{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);font-weight:500}
+.dot{width:8px;height:8px;border-radius:2px;display:inline-block;flex:none}
+.ftags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;padding:3px 9px;border-radius:20px;
+background:var(--panel-2);border:1px solid var(--line);color:var(--ink-2);text-decoration:none}
+.tag:hover{border-color:var(--line-2);color:var(--ink)}
+.tag.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.tag b{font-family:"IBM Plex Mono",monospace;font-size:10px;opacity:.6;font-weight:500}
+.filterrow{display:flex;gap:12px;align-items:baseline;margin:0 0 14px;flex-wrap:wrap}
+.filterlabel{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+font-weight:600;width:60px;flex:none}
+.tagcloud{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.typechip.dm.on{border-color:var(--accent);background:var(--accent-soft)}
+.typechip.diagnosis b,.typechip.comparison b{color:var(--wait)}
+.ftype.diagnosis{background:var(--fail-soft);color:var(--fail)}
+.ftype.comparison{background:var(--wait-soft);color:var(--wait)}
+
 .marker{padding:11px 0;border-bottom:1px solid var(--line)}
 .marker:last-of-type{border-bottom:0}
 .mnote{font-size:13px;color:var(--ink);display:flex;gap:10px;align-items:baseline}
@@ -777,8 +804,29 @@ cb.addEventListener('change',arm); arm();`;
   return shell('MMRS — Worker log', frame('logs', {}, body), { script });
 }
 
+const jparse = (s2, fallback) => { try { return JSON.parse(s2 || ''); } catch { return fallback; } };
+
+const DOMAIN_LABEL = {
+  technology: 'Technology & Systems', making: 'Making & Repair', science: 'Science & Nature',
+  body: 'Body & Mind', work: 'Work & Money', people: 'People & Self',
+  meaning: 'Meaning & Culture', living: 'Living & Leisure',
+};
+
+// The proportional split rendered as a bar, so a 55/45 reads as genuinely
+// split rather than as a label with a number stuck to it.
+function domainBar(doms) {
+  if (!doms.length) return '';
+  return `<div class="dom">
+<div class="dombar">${doms.map((d) => `<i class="d-${esc(d.domain)}" style="width:${d.pct}%"
+ title="${esc(DOMAIN_LABEL[d.domain] || d.domain)} ${d.pct}%"></i>`).join('')}</div>
+<div class="domlabels">${doms.map((d) => `<a href="/findings?domain=${esc(d.domain)}"><i class="dot d-${esc(d.domain)}"></i>${
+  esc(DOMAIN_LABEL[d.domain] || d.domain)}${doms.length > 1 ? ` <b>${d.pct}%</b>` : ''}</a>`).join('')}</div></div>`;
+}
+
 function findingCard(f, opts = {}) {
-  const cites = (() => { try { return JSON.parse(f.citations || '[]'); } catch { return []; } })();
+  const cites = jparse(f.citations, []) || [];
+  const doms = jparse(f.domains, []) || [];
+  const tags = jparse(f.tags, []) || [];
   return `<div class="finding">
 <div class="finding-h">
   <span class="ftype ${esc(f.type)}">${esc(f.type)}</span>
@@ -786,16 +834,19 @@ function findingCard(f, opts = {}) {
   <span class="conf" title="model's own confidence">${f.confidence == null ? '' : Number(f.confidence).toFixed(2)}</span>
 </div>
 ${opts.showFamily ? `<div class="ffam">from <a href="/family/${encodeURIComponent(f.family)}">${esc(f.family)}</a></div>` : ''}
+${domainBar(doms)}
 <div class="fbody">${md.render(f.body)}</div>
+${tags.length ? `<div class="ftags">${tags.map((t) =>
+  `<a class="tag" href="/findings?tag=${encodeURIComponent(t)}">${esc(t)}</a>`).join('')}</div>` : ''}
 ${cites.length ? `<div class="fcite">turns ${cites.map((c) => esc(String(c))).join(', ')}</div>` : ''}
 </div>`;
 }
 
-function findingsPage({ findings, counts, type, verdicts, totals }) {
+function findingsPage({ findings, counts, type, domain, tag, domains = [], tags = [], verdicts, totals }) {
   const tab = (k, label, n2) => `<a class="tab ${type === k ? 'on' : ''}" href="/findings?type=${k}">${label}${
     n2 == null ? '' : ` <span class="tabn">${n(n2)}</span>`}</a>`;
   const byType = Object.fromEntries((counts || []).map((c) => [c.type, c.n]));
-  const order = ['method', 'reference', 'project', 'study', 'decision', 'research', 'howto'];
+  const order = ['method', 'reference', 'project', 'study', 'decision', 'research', 'diagnosis', 'comparison', 'howto'];
 
   const body = `<div class="topbar">
 <div><h1>What it found</h1><p class="sub">${n(totals.findings)} findings and ${n(totals.markers)} markers
@@ -804,6 +855,18 @@ from ${n(totals.extracted)} conversations read${verdicts.length ? ' · ' + verdi
 
 <div class="toolbar"><div class="tabs">${tab('all', 'All', totals.findings)}${
   order.filter((t) => byType[t]).map((t) => tab(t, t, byType[t])).join('')}</div></div>
+
+${domains.length ? `<div class="filterrow"><span class="filterlabel">Domain</span>
+<div class="typechips">${domains.map((d) => `<a class="typechip dm ${domain === d.domain ? 'on' : ''}"
+ href="/findings?domain=${esc(d.domain)}"><i class="dot d-${esc(d.domain)}"></i><b>${n(d.n)}</b><span>${
+  esc(DOMAIN_LABEL[d.domain] || d.domain)}</span></a>`).join('')}</div></div>` : ''}
+
+${tags.length ? `<div class="filterrow"><span class="filterlabel">Tags</span>
+<div class="tagcloud">${tags.map((t) => `<a class="tag ${tag === t.tag ? 'on' : ''}"
+ href="/findings?tag=${encodeURIComponent(t.tag)}">${esc(t.tag)}<b>${n(t.n)}</b></a>`).join('')}</div></div>` : ''}
+
+${domain || tag ? `<p class="note">Filtered by ${domain ? `domain <b>${esc(DOMAIN_LABEL[domain] || domain)}</b>` : ''}${
+  tag ? `tag <b>${esc(tag)}</b>` : ''} — <a href="/findings">clear</a></p>` : ''}
 
 ${findings.length ? findings.map((f) => findingCard(f, { showFamily: true })).join('')
   : `<div class="card"><div class="card-b"><p style="margin:0;color:var(--ink-3)">Nothing extracted yet.

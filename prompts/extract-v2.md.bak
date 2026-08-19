@@ -23,64 +23,19 @@ It is presented as one thread in date order with nothing repeated.
 
 Durable knowledge. The subject of a finding is **the world**, never the person.
 
-Every finding is classified on **three independent axes**. They answer different
-questions, and forcing one field to answer all three is what makes classification
-brittle — anything that does not fit gets crammed into the nearest slot.
-
-### Axis 1 — `type`: what shape of thing is it?
-
-Fixed list. Determines how the eventual page is *written*.
+## Types
 
 - `method` — a worked technique, procedure or calculation. How to do a thing.
-- `reference` — durable facts, specs, part numbers, measurements.
+- `reference` — durable facts, specs, part numbers, comparisons, measurements.
 - `project` — a real undertaking with a history: what was built, decided, changed.
 - `study` — notes on a text, passage, idea or argument.
 - `decision` — a choice made, the options weighed, and the reasoning.
 - `research` — a question investigated and what the investigation concluded.
-- `diagnosis` — a fault worked from symptom through tests to a cause.
-- `comparison` — options evaluated against each other and against constraints.
 - `howto` — practical instructions for a recurring task.
 
 **There is deliberately no type for observations about the person.** If you
 notice something about how he thinks or works, that belongs in Job 2 as a
 marker, not here as a finding. Do not smuggle it in as a `method`.
-
-### Axis 2 — `domains`: what field of knowledge is it in?
-
-Fixed list of eight. Determines where the knowledge eventually *lives*.
-
-- `technology` — computing, software, networks, electronics, infrastructure
-- `making` — mechanical work, physical builds, materials, fabrication, repair
-- `science` — how the physical world works, natural phenomena
-- `body` — health, medicine, fitness, psychology, neurodivergence
-- `work` — career, business, finance, commerce, legal, purchasing
-- `people` — relationships, communication, identity, emotion
-- `meaning` — belief, philosophy, history, language, arts, media
-- `living` — home, cooking, admin, games, hobbies, travel
-
-**Assign proportionally, not exclusively.** Most findings sit mostly in one
-domain and partly in another, and that overlap is information worth keeping — a
-car comparison that is half a purchasing decision is genuinely `55 making /
-45 work`, and flattening it to one label throws that away.
-
-Three rules, so the numbers stay comparable across thousands of findings:
-
-* the percentages **must sum to 100**
-* **at most three** domains may be non-zero
-* **drop anything below 10** — round it into the larger ones
-
-If a finding really does sit wholly in one domain, say `100`. Do not manufacture
-a split to look thorough.
-
-### Axis 3 — `tags`: what specifics does it touch?
-
-Free text, as many as genuinely apply, lower case. This is the escape valve:
-**anything the fixed lists cannot express belongs here rather than being forced
-into a type or a domain.** Names of models, parts, tools, places, techniques,
-concepts. Three to eight is normal.
-
-Prefer the specific over the general — `b5254t3` and `slot-port` beat `engine`
-and `audio`. General terms are already covered by the domain.
 
 ## What is not a finding
 
@@ -111,7 +66,7 @@ Every finding cites the turn numbers it rests on, as they appear in the
 
 ## Style
 
-`body` is prose that could be published close to as-written. Plain, direct,
+`body` is prose that could go into the wiki close to as-written. Plain, direct,
 specific. No preamble, no "in this conversation". Lead with the substance.
 British spelling. Prefer the concrete number over the vague adjective.
 
@@ -170,16 +125,13 @@ Return **only** a JSON object. No prose around it, no code fence.
 {
   "summary": "2-3 sentences: what this thread was about and what came of it.",
   "verdict": "durable" | "thin" | "nothing",
-  "domains": [{"domain": "making", "pct": 100}],
   "topics": ["short", "tags"],
   "entities": ["specific things named — models, parts, books, tools, places"],
   "findings": [
     {
-      "type": "method|reference|project|study|decision|research|diagnosis|comparison|howto",
+      "type": "method|reference|project|study|decision|research|howto",
       "title": "Short, specific, no colon-subtitle",
-      "body": "Prose, close to publishable. Several sentences to several paragraphs.",
-      "domains": [{"domain": "making", "pct": 70}, {"domain": "technology", "pct": 30}],
-      "tags": ["specific", "lower-case", "terms"],
+      "body": "Wiki-ready prose. Several sentences to several paragraphs.",
       "confidence": 0.0,
       "citations": [12, 14, 31]
     }

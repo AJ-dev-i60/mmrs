@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS extractions (
   topics      TEXT,
   entities    TEXT,
   open_questions TEXT,
+  domains     TEXT,
   model       TEXT,
   elapsed_ms  INTEGER,
   usage_json  TEXT,
@@ -100,17 +101,32 @@ CREATE TABLE IF NOT EXISTS extractions (
   PRIMARY KEY (import_id, family)
 );
 
+-- Three independent axes (see prompts/extract.md):
+--   type    — what shape of thing it is, drives how a page is written
+--   domains — what field, proportional, drives where it lives
+--   tags    — open specifics, the escape valve, drives how it is found
+-- Making one exclusive field carry all three is what caused misfits to be
+-- crammed into the nearest slot or dropped.
 CREATE TABLE IF NOT EXISTS findings (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  import_id  TEXT NOT NULL,
-  family     TEXT NOT NULL,
-  type       TEXT NOT NULL,
-  title      TEXT NOT NULL,
-  body       TEXT NOT NULL,
-  confidence REAL,
-  citations  TEXT,
-  created_at TEXT NOT NULL
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  import_id    TEXT NOT NULL,
+  family       TEXT NOT NULL,
+  type         TEXT NOT NULL,
+  title        TEXT NOT NULL,
+  body         TEXT NOT NULL,
+  domains      TEXT,            -- JSON [{domain, pct}], sums to 100, max 3
+  primary_domain TEXT,          -- denormalised highest-pct domain, for cheap filtering
+  tags         TEXT,            -- JSON array of free-text tags
+  confidence   REAL,
+  citations    TEXT,
+  created_at   TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS finding_tags (
+  import_id TEXT NOT NULL, finding_id INTEGER NOT NULL, tag TEXT NOT NULL,
+  PRIMARY KEY (finding_id, tag)
+);
+CREATE INDEX IF NOT EXISTS idx_ftags ON finding_tags(import_id, tag);
+CREATE INDEX IF NOT EXISTS idx_fdom  ON findings(import_id, primary_domain);
 
 -- Observations, not conclusions. Read later, in bulk, by the portrait pass.
 CREATE TABLE IF NOT EXISTS markers (
@@ -281,18 +297,27 @@ function saveExtraction(importId, family, result, meta) {
     d.prepare('DELETE FROM findings WHERE import_id=? AND family=?').run(importId, family);
     d.prepare('DELETE FROM markers  WHERE import_id=? AND family=?').run(importId, family);
     d.prepare(`INSERT OR REPLACE INTO extractions
-      (import_id, family, verdict, summary, topics, entities, open_questions, model, elapsed_ms, usage_json, created_at)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(
+      (import_id, family, verdict, summary, topics, entities, open_questions, domains, model, elapsed_ms, usage_json, created_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
       importId, family, result.verdict || null, result.summary || null,
       JSON.stringify(result.topics || []), JSON.stringify(result.entities || []),
-      JSON.stringify(result.open_questions || []),
+      JSON.stringify(result.open_questions || []), JSON.stringify(normaliseDomains(result.domains)),
       meta.model || null, meta.elapsed_ms || null, JSON.stringify(meta.usage || {}), now());
 
+    d.prepare('DELETE FROM finding_tags WHERE import_id=? AND finding_id IN (SELECT id FROM findings WHERE import_id=? AND family=?)')
+      .run(importId, importId, family);
     const fi = d.prepare(`INSERT INTO findings
-      (import_id, family, type, title, body, confidence, citations, created_at) VALUES (?,?,?,?,?,?,?,?)`);
+      (import_id, family, type, title, body, domains, primary_domain, tags, confidence, citations, created_at)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`);
+    const ft = d.prepare('INSERT OR IGNORE INTO finding_tags (import_id, finding_id, tag) VALUES (?,?,?)');
     for (const f of result.findings || []) {
-      fi.run(importId, family, f.type || 'reference', f.title || '(untitled)', f.body || '',
+      const doms = normaliseDomains(f.domains);
+      const tags = (Array.isArray(f.tags) ? f.tags : [])
+        .map((t) => String(t).trim().toLowerCase()).filter(Boolean).slice(0, 20);
+      const info = fi.run(importId, family, f.type || 'reference', f.title || '(untitled)', f.body || '',
+        JSON.stringify(doms), doms.length ? doms[0].domain : null, JSON.stringify(tags),
         f.confidence == null ? null : Number(f.confidence), JSON.stringify(f.citations || []), now());
+      for (const t of tags) ft.run(importId, info.lastInsertRowid, t);
     }
     const mk = d.prepare(`INSERT INTO markers
       (import_id, family, turn, quote, note, created_at) VALUES (?,?,?,?,?,?)`);
@@ -371,15 +396,47 @@ const listEvents = ({ importId, level, limit = 300, sinceId = 0 } = {}) => {
 const eventCounts = (importId) =>
   q(`SELECT level, COUNT(*) AS n FROM events WHERE import_id = ? GROUP BY level`).all(importId);
 
+const DOMAINS = ['technology', 'making', 'science', 'body', 'work', 'people', 'meaning', 'living'];
+
+// Enforce the rules the prompt asks for, because a model will occasionally
+// return 4 domains, or a split summing to 97. Drop unknowns and anything under
+// 10, keep the top three, then rescale so the result always sums to 100.
+function normaliseDomains(raw) {
+  if (!Array.isArray(raw)) return [];
+  let d = raw
+    .map((x) => ({ domain: String((x && x.domain) || '').trim().toLowerCase(), pct: Number((x && x.pct) || 0) }))
+    .filter((x) => DOMAINS.includes(x.domain) && x.pct >= 10)
+    .sort((a, b) => b.pct - a.pct)
+    .slice(0, 3);
+  const total = d.reduce((a, x) => a + x.pct, 0);
+  if (!total) return [];
+  d = d.map((x) => ({ domain: x.domain, pct: Math.round(100 * x.pct / total) }));
+  // rounding can leave 99 or 101; push the remainder onto the largest
+  const drift = 100 - d.reduce((a, x) => a + x.pct, 0);
+  if (drift) d[0].pct += drift;
+  return d;
+}
+
 /* ---------- reading what extraction produced ---------- */
 
-const allFindings = (importId, { type, limit = 500 } = {}) => {
-  const where = ['import_id = ?']; const args = [importId];
-  if (type && type !== 'all') { where.push('type = ?'); args.push(type); }
+const allFindings = (importId, { type, domain, tag, limit = 500 } = {}) => {
+  const where = ['f.import_id = ?']; const args = [importId];
+  if (type && type !== 'all') { where.push('f.type = ?'); args.push(type); }
+  if (domain && domain !== 'all') { where.push('f.primary_domain = ?'); args.push(domain); }
+  if (tag) { where.push('EXISTS (SELECT 1 FROM finding_tags t WHERE t.finding_id = f.id AND t.tag = ?)'); args.push(tag); }
   args.push(limit);
-  return q(`SELECT * FROM findings WHERE ${where.join(' AND ')}
-            ORDER BY confidence DESC, id ASC LIMIT ?`).all(...args);
+  return q(`SELECT f.* FROM findings f WHERE ${where.join(' AND ')}
+            ORDER BY f.confidence DESC, f.id ASC LIMIT ?`).all(...args);
 };
+
+const domainSummary = (importId) =>
+  q(`SELECT primary_domain AS domain, COUNT(*) AS n FROM findings
+     WHERE import_id=? AND primary_domain IS NOT NULL
+     GROUP BY primary_domain ORDER BY n DESC`).all(importId);
+
+const topTags = (importId, limit = 40) =>
+  q(`SELECT tag, COUNT(*) AS n FROM finding_tags WHERE import_id=?
+     GROUP BY tag ORDER BY n DESC, tag LIMIT ?`).all(importId, limit);
 
 const familyFindings = (importId, family) =>
   q(`SELECT * FROM findings WHERE import_id=? AND family=? ORDER BY confidence DESC, id`).all(importId, family);
@@ -399,6 +456,7 @@ const allMarkers = (importId, limit = 400) =>
 module.exports = {
   open, q, now, DB_PATH, DATA_DIR,
   allFindings, familyFindings, familyMarkers, familyExtraction, verdictCounts, allMarkers,
+  domainSummary, topTags, normaliseDomains, DOMAINS,
   logEvent, listEvents, eventCounts,
   claimNext, saveExtraction, releaseFamily, failFamily, releaseStale,
   extractionProgress, findingsSummary, recentExtractions, totals,

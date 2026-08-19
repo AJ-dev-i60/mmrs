@@ -1,0 +1,478 @@
+{
+  "family": "Volvo vs Mercedes Comparison",
+  "elapsed_s": 229,
+  "usage": {
+    "input_tokens": 2,
+    "cache_creation_input_tokens": 32057,
+    "cache_read_input_tokens": 16011,
+    "output_tokens": 17337,
+    "output_tokens_details": {
+      "thinking_tokens": 8218
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 32057,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "not_available",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 17337,
+        "cache_read_input_tokens": 16011,
+        "cache_creation_input_tokens": 32057,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 32057
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard"
+  },
+  "cost_equiv_usd": 0.7811195000000002,
+  "summary": "An intuition that a P1-era Volvo V50 T5 resembles late-80s/90s Mercedes opened into a comparison of two design philosophies — neglect-tolerant engineering versus stewardship-rewarding engineering — and then turned into a detailed build brief for the owner's 380 SEC. The plan settled on replacing the M116 V8 with the M103 inline six that the W126 sedan already used, converting it to modern coil-on-plug sequential EFI, and adding a single moderate turbo, while keeping the car visually and behaviourally indistinguishable from factory. The thread produced hard constraints, turbo and torque targets, a cooling-stack argument, and a staged build order with validation tests, ending on two unanswered questions: which transmission, and what trailer mass.",
+  "verdict": "durable",
+  "domains": [
+    {
+      "domain": "making",
+      "pct": 70
+    },
+    {
+      "domain": "technology",
+      "pct": 20
+    },
+    {
+      "domain": "work",
+      "pct": 10
+    }
+  ],
+  "topics": [
+    "w126",
+    "m103",
+    "turbo-conversion",
+    "oem-plus",
+    "volvo-v50-t5",
+    "engine-management",
+    "cooling",
+    "restomod-discipline"
+  ],
+  "entities": [
+    "Mercedes-Benz 380 SEC",
+    "Mercedes-Benz W126",
+    "C126",
+    "Mercedes-Benz 300 SE",
+    "Mercedes-Benz W124",
+    "M103",
+    "M116",
+    "Bosch KE-Jetronic",
+    "Volvo V50 T5",
+    "B5254T",
+    "Volvo P1 platform",
+    "Mosselman Turbo Systems",
+    "AMG",
+    "Sportline",
+    "Mercedes-Benz E500",
+    "Lexus LS430",
+    "BMW E39 530i",
+    "Saab 9-5 Aero",
+    "Volvo S60 R"
+  ],
+  "findings": [
+    {
+      "type": "project",
+      "title": "Turning a 380 SEC into a turbocharged M103 coupé",
+      "body": "The C126 380 SEC was bought as a project car for the S-Class coupé concept itself — a two-door big-body saloon, roughly the equivalent of a 7 Series coupé, a combination odd enough that it only existed because Mercedes felt no need to justify it. The build brief is to leave that concept visually untouched and change everything underneath.\n\nThe powertrain plan replaces the M116 V8 with the 3.0-litre M103 inline six, converted wholesale to modern control: coil-on-plug ignition, sequential port injection on a fuel rail fed by an aftermarket intake manifold, an aftermarket exhaust manifold carrying the lambda sensor, and full ECU management with knock control and the usual protection strategies. Once that architecture is in place, a single moderate-sized turbo becomes available almost for free, which is the direction chosen.\n\nThe use case sets the engineering targets, not a power figure: four adults, full luggage and a trailer, holding 130 km/h on cruise control indefinitely, with enough midrange that a passenger notices without being told. Existing cooling hardware is to be reused where possible — the original copper radiator with its integral gearbox oil cooler is large and healthy — with an intercooler added ahead of it and the clutch fan replaced by an electric one. Exhaust note should be deep rather than raspy, with a valve system so the six can be let loose at car meets.\n\nThe important structural point about the plan is that it is no longer a restoration. Adding modern management and boost moves it out of period-correct territory into something better described as factory-plausible: a car Mercedes could not have built in 1985 but might have built later with the same values. That raises the discipline required rather than relaxing it, because there is no longer a factory specification to check the result against.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 70
+        },
+        {
+          "domain": "technology",
+          "pct": 30
+        }
+      ],
+      "tags": [
+        "w126",
+        "c126",
+        "380-sec",
+        "m103",
+        "turbo",
+        "coil-on-plug",
+        "sequential-efi",
+        "restomod"
+      ],
+      "confidence": 0.9,
+      "citations": [
+        13,
+        17,
+        19
+      ]
+    },
+    {
+      "type": "decision",
+      "title": "Choosing a turbocharged M103 six over the M116 V8",
+      "body": "The M103 was chosen over keeping the 380 SEC's M116 V8 on several grounds that reinforce each other. It is a long-stroke, torque-biased, thermally conservative design with a heavily overbuilt bottom end and a long service reputation, and it was the engine the W126 saloon already carried, so nothing structural has to change to fit it. A forced-induction M103 is also lighter over the nose than the V8, avoids the thirst and thermal complexity of an old carburetted-era V8, and preserves the smoothness the coupé depends on.\n\nThe preference for an inline six over a V8 is a coherence argument rather than a taste one: a turbocharged straight six delivers torque density and mechanical calm, which is what the car's character is built from, whereas a V8 delivers presence, which the car already has from its body.\n\nThe second half of the decision is abandoning KE-Jetronic for modern management. The stated reasons were cold-start reliability, fuel economy, and ease of maintenance and ownership — not power. Mixing modern injection and ignition components into a KE-Jetronic system produces a hybrid nobody can diagnose; going fully modern removes that failure mode and, incidentally, makes turbocharging a straightforward extension rather than a separate project.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 65
+        },
+        {
+          "domain": "technology",
+          "pct": 35
+        }
+      ],
+      "tags": [
+        "m103",
+        "m116",
+        "inline-six",
+        "ke-jetronic",
+        "engine-management",
+        "torque-density"
+      ],
+      "confidence": 0.85,
+      "citations": [
+        13,
+        17,
+        18
+      ]
+    },
+    {
+      "type": "reference",
+      "title": "The M103 was a factory W126 powertrain, not a swap",
+      "body": "The 300 SE was a W126 fitted from the factory with the M103 E30 running Bosch KE-Jetronic fuel injection, with published output and torque figures for both catalyst and non-catalyst versions. A closed-loop three-way catalyst was an option initially and standard from September 1986. Both manual and automatic transmissions were offered, with gear ratios and final drive published for the manual.\n\nThe consequence for a C126 coupé build is that fitting an M103 is a variant realignment inside the same body family rather than an engine swap. Mounts, brackets, cooling layout, exhaust routing and driveline components all have a factory-supported configuration to copy, which is what keeps the result serviceable by a normal Mercedes specialist instead of dependent on custom parts.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 60
+        },
+        {
+          "domain": "technology",
+          "pct": 40
+        }
+      ],
+      "tags": [
+        "w126",
+        "300-se",
+        "m103-e30",
+        "ke-jetronic",
+        "catalytic-converter",
+        "donor-strategy"
+      ],
+      "confidence": 0.75,
+      "citations": [
+        16
+      ]
+    },
+    {
+      "type": "reference",
+      "title": "Period precedents for a stronger M103",
+      "body": "Several in-period precedents establish both that the M103 tolerates being pushed and roughly how far the era's engineers were prepared to push it.\n\nMosselman Turbo Systems sold turbo kits for M103-equipped W124s with a warranty. That is the most useful data point available: a commercial warranty implies the head sealing, oiling and crank integrity were considered adequate for forced induction as delivered, not merely survivable.\n\nAMG increased M103 displacement from 3.0 to 3.2 litres on W124-based cars with cam and intake changes. Pre-merger AMG also offered W126 work, including widebody kits for the coupé and engines of 5.0, 5.5 and 6.0 litres — which demonstrates that mechanically altered but conservatively styled W126 coupés were an accepted in-period category.\n\nThe W124 Sportline package, available from around September 1989, ran 205/60 R15 tyres on 7Jx15 wheels with a lowered body and sport suspension. That is worth reading as a calibration envelope rather than a parts list: a modest tyre and wheel increase plus chassis changes that sharpen without hardening, and no exterior signalling. Sportline components are platform-specific in geometry and packaging, so they transfer as a philosophy far more reliably than as hardware.\n\nOne naming caution: labels like \"E300 Sportline\" vary by market and year, and Sportline itself covers different option-code bundles. Any donor sourcing should be anchored on specific part numbers and archive or EPC data, not on marketing names.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 75
+        },
+        {
+          "domain": "technology",
+          "pct": 15
+        },
+        {
+          "domain": "work",
+          "pct": 10
+        }
+      ],
+      "tags": [
+        "mosselman",
+        "amg",
+        "sportline",
+        "w124",
+        "m103",
+        "part-numbers"
+      ],
+      "confidence": 0.6,
+      "citations": [
+        16,
+        17
+      ]
+    },
+    {
+      "type": "method",
+      "title": "Constraints that keep a re-engineered classic faithful to its original",
+      "body": "Once a build leaves period-correct territory, the test can no longer be \"could the manufacturer have done this at the time\". The workable replacement test is \"does this violate the manufacturer's principles, even where it exceeds their era's tooling\". For a W126 that produces a specific and fairly demanding constraint set.\n\nNothing irreversible to the shell or structure. No cutting the radiator support, no tunnel surgery, no subframe clearancing, no improvised brackets that change load paths — if it cannot be undone cleanly, the result is a modified old car rather than a plausible one.\n\nNVH strategy is preserved absolutely. No solid or polyurethane mounts throughout, no lumpy idle from an aggressive cam, no exhaust layout that drones between 1,800 and 2,600 rpm, which is where the car actually lives. On a boosted engine this extends further: no audible boost surge, flutter or wastegate noise in the cabin, no theatrical cold start, no short exhaust. If the car ever sounds modified, the concept has failed.\n\nModern control is allowed; modern behaviour is not. Sequential injection, coil-on-plug, closed-loop lambda, knock control, boost-by-gear and soft torque shaping all belong. Aggressive throttle mapping, sport-mode personalities, exaggerated overrun fuel cut and unstable idle character do not. The modern tooling exists to produce old-fashioned calm more reliably, not to introduce a different personality.\n\nVisual invisibility extends into the engine bay. The intake manifold should look industrial rather than jewelled, the fuel rail visually quiet, looms OEM-routed and OEM-wrapped, and the ECU hidden, dry and serviceable. Someone opening the bonnet should read the car as unusually complete rather than swapped.\n\nServiceability is the constraint that outlasts all the others. No bespoke wiring only the builder understands, no parts-bin combination that requires a custom hose each time. The target is that a competent independent Mercedes shop can diagnose and repair it with a multimeter and a laptop.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 70
+        },
+        {
+          "domain": "technology",
+          "pct": 20
+        },
+        {
+          "domain": "meaning",
+          "pct": 10
+        }
+      ],
+      "tags": [
+        "nvh",
+        "reversibility",
+        "serviceability",
+        "oem-plus",
+        "engine-bay-presentation",
+        "w126"
+      ],
+      "confidence": 0.8,
+      "citations": [
+        16,
+        18
+      ]
+    },
+    {
+      "type": "method",
+      "title": "Sizing a turbo for a heavy tourer that tows",
+      "body": "For a two-tonne coupé expected to carry four adults, luggage and a trailer and hold 130 km/h on cruise control, the sizing target is response and sustained-load efficiency, not peak output. Towing keeps the engine in the midrange under continuous load, which is exactly where an oversized turbine punishes you with backpressure and heat.\n\nBehavioural targets rather than part numbers: meaningful boost onset by 2,000–2,300 rpm, full torque by 2,700–3,200 rpm, a gentle rather than cliff-edged roll-off, and calm behaviour near the redline with no need to chase it. A compressor and turbine pairing that will not surge at low rpm under heavy load, stays efficient at modest boost, and does not need high exhaust backpressure to spool.\n\nHardware choices that keep the character intact: single turbo, internal wastegate (quieter, simpler, closer to OEM), recirculating bypass valve rather than an atmospheric one, and conservative boost. The engine that feels effortless is the one running modest boost with low backpressure and stable ignition, not the one making the biggest number.\n\nTorque delivery then has to be shaped in software to protect the gearbox, differential, flex discs and propshaft: boost-by-gear with reduced boost in first and second, ramp-rate limits so torque never steps, and deliberately linear, boring throttle mapping. On an older automatic this also means immaculate shift quality, conservative line pressure, adequate ATF cooling and lock-up behaviour that never lugs the engine into knock.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 70
+        },
+        {
+          "domain": "technology",
+          "pct": 30
+        }
+      ],
+      "tags": [
+        "turbo-sizing",
+        "internal-wastegate",
+        "boost-by-gear",
+        "backpressure",
+        "torque-shaping",
+        "towing"
+      ],
+      "confidence": 0.8,
+      "citations": [
+        19,
+        20
+      ]
+    },
+    {
+      "type": "method",
+      "title": "Cooling stack decisions for a turbocharged tow car",
+      "body": "Under sustained load the limiting factor is heat rejection, not power, and three decisions dominate it.\n\nThe original copper-brass radiator with integral gearbox oil cooler is worth keeping only if it passes a proper flow and condition test. Copper-brass cores can be excellent, but \"massive\" only counts if the core is clear and not partially blocked; a marginal old core is worse than a good aluminium replacement, and the reverse is not automatically true either.\n\nAn intercooler mounted ahead of the radiator can quietly reduce the radiator's effectiveness. It needs to be sized for low pressure drop and, more importantly, properly ducted and shrouded — ducting matters more than core thickness. The test is whether the radiator still gets the air it needs at 130 km/h with the air conditioning running.\n\nReplacing the engine-driven clutch fan with an electric one is the highest-risk item in the plan. A clutch fan is self-regulating, extremely reliable, and good at low-speed airflow, which is precisely the condition that kills engines: a slow hill climb or traffic crawl while towing. An electric conversion has to be done the way a manufacturer would — high static-pressure puller fans, full shroud coverage rather than zip-tied to the core, staged low/high control with air-conditioning triggering, a fail-safe that goes to full speed and stays there on a fast coolant rise, and alternator and wiring capacity sized for the worst case.\n\nOil temperature usually runs away before coolant temperature under towing load, so a properly sized engine oil cooler with thermostatic routing (to avoid overcooling) is part of the same stack, alongside automatic transmission fluid cooling if the car keeps its original gearbox.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 80
+        },
+        {
+          "domain": "technology",
+          "pct": 20
+        }
+      ],
+      "tags": [
+        "radiator",
+        "intercooler-ducting",
+        "clutch-fan",
+        "electric-fan",
+        "oil-cooler",
+        "atf-temperature"
+      ],
+      "confidence": 0.85,
+      "citations": [
+        19,
+        20
+      ]
+    },
+    {
+      "type": "method",
+      "title": "Build order and validation gates for an engine conversion",
+      "body": "The sequence that avoids expensive rework separates each source of uncertainty so failures can only come from one place at a time.\n\nFirst, bring the chassis, brakes and cooling to standard in the original configuration and confirm they are right. Second, run the new engine naturally aspirated on the modern ECU with coil-on-plug and sequential injection, and prove cold start, economy and drivability on that alone. Third, add turbo hardware at conservative boost, with all safety strategies already working before the first boosted mile. Fourth, shape torque and validate towing. Fifth, and only once heat and drivability are proven, finalise the exhaust and tune the valve system. Turbocharging before the naturally aspirated management phase is solid guarantees an indefinite debugging period, because every symptom will have two possible causes.\n\nThe validation gates are all worst-case rather than heroic. For cooling: idle heat soak with the air conditioning on to test fan logic, a slow hill climb or traffic crawl for worst-case airflow, a sustained 130 km/h cruise for steady-state rejection, and hot restart behaviour afterwards. For towing: a long grade at moderate throttle rather than a full-throttle pull, confirming that coolant, oil and intake air temperatures all stabilise rather than creep, that knock activity stays minimal and controlled, and that transmission fluid temperature holds. For serviceability: whether a competent independent shop could diagnose the result, and whether wear items can be replaced without fabrication.\n\nSensor coverage is what makes the gates meaningful — wideband lambda, post-intercooler intake air temperature, coolant temperature with dash redundancy, oil pressure and temperature with limp logic, boost pressure, knock, and fuel pressure so the ECU can detect failing delivery. Protection strategies should reduce boost or limit torque and stay drivable, reserving shutdown for catastrophic pressure loss.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 60
+        },
+        {
+          "domain": "technology",
+          "pct": 40
+        }
+      ],
+      "tags": [
+        "build-sequence",
+        "commissioning",
+        "heat-soak-test",
+        "limp-mode",
+        "sensor-coverage",
+        "knock-control"
+      ],
+      "confidence": 0.85,
+      "citations": [
+        20
+      ]
+    },
+    {
+      "type": "decision",
+      "title": "OEM correctness before modification on a V50 T5",
+      "body": "The rule adopted for the V50 T5 is that the car gets returned to factory-correct condition before any modification begins, and that modifications afterwards stay at OEM-plus: 17-inch wheels replaced with 18s, an intake, an exhaust, and a mild ECU tune.\n\nThe engineering justification is that on a P1-era Volvo the driving character depends on calibration rather than margin. Until bushings, mounts, alignment, driveline, sensors and cooling are all correct, any modification is measured against an unknown baseline and its effect cannot be separated from the accumulated deviation it is layered on top of. Factory specification functions as the reference point that makes changes legible.\n\nThe same logic sets the ceiling. Because the car's excellence comes from balance, deviating far from OEM breaks coherence rather than extending it — which is the opposite of the W126, where large deliberate margins and factory variation across trims and markets leave real headroom for recomposition.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 80
+        },
+        {
+          "domain": "technology",
+          "pct": 20
+        }
+      ],
+      "tags": [
+        "volvo-v50",
+        "p1-platform",
+        "oem-plus",
+        "baseline-calibration",
+        "ecu-tune"
+      ],
+      "confidence": 0.8,
+      "citations": [
+        13,
+        14
+      ]
+    },
+    {
+      "type": "comparison",
+      "title": "Neglect tolerance versus stewardship reward as a design axis",
+      "body": "Two cars can be equally well engineered and still respond completely differently to care, because they were designed around different assumptions about the owner.\n\nMercedes of the W124 and W126 era designed for a wide abuse envelope: large margins in cooling, lubrication, rubber compliance and structural mass. The practical consequence is a flat curve. A tired example is still pleasant, and a perfectly sorted one is a stronger version of the same car rather than a different car. Ride comfort comes from mass, geometry and springing philosophy; isolation comes from material abundance. The virtues are designed in rather than tuned in, so they degrade slowly and improve slowly.\n\nThe P1-era Volvo is the opposite case. Tighter tolerances, more interdependent systems, and refinement that depends on bushings being fresh, mounts being correct, and alignment and balance being exact. The curve is steep: small degradations are felt, small fixes compound, and the car changes character as it is sorted rather than merely improving.\n\nThe useful conclusion is counter-intuitive. A design that tolerates neglect has, by construction, less headroom for experiential gain when treated perfectly — the same margins that blunt decay also blunt the improvement. So the gap between a well-sorted example and an average one is larger on the stewardship-dependent car, which means the return on attentive ownership is higher there, and the penalty for inattention is higher too. Which design suits a given owner depends less on which is better engineered than on whether that owner will actually do the maintenance.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 75
+        },
+        {
+          "domain": "meaning",
+          "pct": 25
+        }
+      ],
+      "tags": [
+        "w124",
+        "w126",
+        "p1-platform",
+        "nvh",
+        "design-margin",
+        "maintenance-sensitivity"
+      ],
+      "confidence": 0.65,
+      "citations": [
+        2,
+        3,
+        4,
+        6
+      ]
+    },
+    {
+      "type": "reference",
+      "title": "Ford-era Volvo parts economics on the P1 platform",
+      "body": "The close Ford–Volvo partnership during the P1 era has an ownership-cost consequence that is easy to overlook when comparing cars. Because the platform was built at industrial scale within the Ford group, parts pricing for a P1-generation Volvo behaves like a mass-market car rather than a premium one: supply chains are deep and redundant, aftermarket coverage is broad and mature, and diagnostic and tribal knowledge is extensive.\n\nThat is a sharp contrast with Volvo running costs outside the Ford-group era, which follow more typical premium-marque pricing. The B5254T T5 engine of this generation is also well documented in its failure modes, which are early-warning and avoidable, and it is highly tolerant provided oil-change discipline is strict and maintenance items are dealt with promptly.\n\nThe combination — premium driving character with economy-car running economics — is unusual and largely an artefact of timing rather than of anything intrinsic to the brand. It is worth factoring explicitly into a purchase or keep-or-sell decision, because it does not generalise to Volvos either side of that period.",
+      "domains": [
+        {
+          "domain": "making",
+          "pct": 55
+        },
+        {
+          "domain": "work",
+          "pct": 45
+        }
+      ],
+      "tags": [
+        "volvo-p1",
+        "b5254t",
+        "t5",
+        "ford-volvo",
+        "parts-availability",
+        "running-costs"
+      ],
+      "confidence": 0.7,
+      "citations": [
+        5,
+        6
+      ]
+    }
+  ],
+  "markers": [
+    {
+      "turn": 1,
+      "quote": "the level of refinement, the attention to detail, the simplicity in complexity, or rather the simplicity in execution, is what reminds me of Mercedes. What do you think? Am I right or am I missing it?",
+      "note": "Opens with an intuition and asks for it to be checked"
+    },
+    {
+      "turn": 3,
+      "quote": "the Mercedes has a broader buffer of return to optimize longevity in case of neglect, whereas the Volvo provides a better experience and, as a trade-off, requires more attentive maintenance and care",
+      "note": "Restates a suggested framing in his own sharper terms"
+    },
+    {
+      "turn": 5,
+      "quote": "So it really feels like a cheat code. Volvo excellence at economy car maintenance prices.",
+      "note": "Expresses satisfaction at a cost-versus-quality arbitrage he found"
+    },
+    {
+      "turn": 5,
+      "quote": "if I'm also stewardsly taking care of that Mercedes, will it return with the same amount of ownership satisfaction as, for example, the Volvo would?",
+      "note": "Tests a just-agreed framework against his other car"
+    },
+    {
+      "turn": 7,
+      "quote": "Let's largely put aside all of the points we just discussed.",
+      "note": "Explicitly resets scope mid-thread rather than continuing"
+    },
+    {
+      "turn": 11,
+      "quote": "try and go for cars that are not ordinary, like mine, but also feel free to include cars that are seemingly ordinary or popular. So don't be afraid to branch out",
+      "note": "Specifies the breadth and shape of the answer wanted"
+    },
+    {
+      "turn": 13,
+      "quote": "I'm hell-bent on getting it as OEM correct as possible before I start modifying",
+      "note": "States a self-imposed sequencing rule for one car"
+    },
+    {
+      "turn": 13,
+      "quote": "keeping it as an understated coupe so that it speaks for itself, but it hides a secret",
+      "note": "States an appearance constraint and the reason for it"
+    },
+    {
+      "turn": 17,
+      "quote": "Here are some specifics that I settled on early.",
+      "note": "Frames key build choices as already decided, not open"
+    },
+    {
+      "turn": 17,
+      "quote": "I know this changes things, but this was my plan and my dream",
+      "note": "Holds position while acknowledging it breaks the earlier framing"
+    },
+    {
+      "turn": 19,
+      "quote": "I want to hand the keys over to my mom to drive the car for a week and not think twice about it or have to explain anything to her",
+      "note": "Reuses a reliability standard from his previous build"
+    },
+    {
+      "turn": 19,
+      "quote": "I would consider a valves setup for car meets so the inline 6 can sing loudly and make turbo noises",
+      "note": "Carves an exception to his own understatement rule"
+    }
+  ],
+  "open_questions": [
+    "Which transmission the W126 currently has and whether it will be kept, since it drives torque-limit and ATF-cooling strategy",
+    "What trailer mass the car needs to tow, which changes thermal and torque strategy significantly",
+    "Whether the existing copper-brass radiator passes a flow and condition test, and therefore whether it can be reused",
+    "Whether the clutch fan should be replaced by electric at all, or a hybrid arrangement retained",
+    "A defined power and torque ceiling that preserves driveline and thermal margin",
+    "Emissions target for the converted engine — retain a catalyst or not, and what South African law requires",
+    "LHD or RHD, coupé year, and confirmation of the current engine, all of which affect donor part sourcing",
+    "Which specific donor part numbers correspond to the intended M103 configuration, rather than relying on marketing names like 'E300 Sportline'"
+  ]
+}

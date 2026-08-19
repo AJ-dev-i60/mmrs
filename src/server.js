@@ -174,10 +174,14 @@ const server = http.createServer(async (req, res) => {
       const latest = db.listImports().find((i) => i.status === 'ready');
       if (!latest) return send(res, 404, page.notFound());
       const type = url.searchParams.get('type') || 'all';
+      const domain = url.searchParams.get('domain') || null;
+      const tag = url.searchParams.get('tag') || null;
       return send(res, 200, page.findingsPage({
-        type,
-        findings: db.allFindings(latest.id, { type }),
+        type, domain, tag,
+        findings: db.allFindings(latest.id, { type, domain, tag }),
         counts: db.findingsSummary(latest.id),
+        domains: db.domainSummary(latest.id),
+        tags: db.topTags(latest.id, 30),
         verdicts: db.verdictCounts(latest.id),
         totals: db.totals(latest.id),
       }));
