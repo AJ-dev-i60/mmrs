@@ -192,6 +192,27 @@ padding-top:9px;border-top:1px solid var(--line)}
 .oq{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
 .oq b{color:var(--ink);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
 .oq ul{margin:8px 0 0;padding-left:20px}.oq li{margin-bottom:5px}
+/* Finding-type breakdown. Previously a run-on line of bold numbers and words
+   with nothing separating them; now chips that share the colour coding used on
+   the findings page, so the dashboard and that page read as one system. */
+.typerow{margin-top:18px;padding-top:15px;border-top:1px solid var(--line)}
+.typerow-l{display:block;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+color:var(--ink-3);font-weight:600;margin-bottom:10px}
+.typechips{display:flex;flex-wrap:wrap;gap:8px}
+.typechip{display:inline-flex;align-items:baseline;gap:6px;padding:5px 11px;border-radius:7px;
+background:var(--panel-2);border:1px solid var(--line);text-decoration:none;line-height:1.2}
+.typechip:hover{border-color:var(--line-2);background:var(--panel)}
+.typechip b{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;
+font-size:14px;font-weight:600;color:var(--ink)}
+.typechip span{font-size:12.5px;color:var(--ink-2)}
+.typechip.method    b{color:var(--accent)}
+.typechip.reference b{color:var(--accent)}
+.typechip.project   b{color:var(--wait)}
+.typechip.decision  b{color:var(--wait)}
+.typechip.study     b{color:var(--done)}
+.typechip.research  b{color:var(--done)}
+.typechip.howto     b{color:var(--done)}
+
 .marker{padding:11px 0;border-bottom:1px solid var(--line)}
 .marker:last-of-type{border-bottom:0}
 .mnote{font-size:13px;color:var(--ink);display:flex;gap:10px;align-items:baseline}
@@ -371,8 +392,11 @@ ${(run.recent || []).length ? `<div class="tw" style="margin-top:16px"><table>
 <td>${esc(r.verdict || '')}</td><td class="n">${n(r.n_findings)}</td><td class="n">${n(r.n_markers)}</td>
 <td class="n">${r.elapsed_ms ? Math.round(r.elapsed_ms / 1000) + 's' : ''}</td></tr>`).join('')}</tbody></table></div>` : ''}
 
-${(run.findingTypes || []).length ? `<div class="legend" style="margin-top:14px">${
-  run.findingTypes.map((t) => `<span><b style="color:var(--ink)">${n(t.n)}</b>&nbsp;${esc(t.type)}</span>`).join('')}</div>` : ''}
+${(run.findingTypes || []).length ? `<div class="typerow">
+<span class="typerow-l">Findings by type</span>
+<div class="typechips">${run.findingTypes.map((t) =>
+  `<a class="typechip ${esc(t.type)}" href="/findings?type=${encodeURIComponent(t.type)}">
+     <b>${n(t.n)}</b><span>${esc(t.type)}</span></a>`).join('')}</div></div>` : ''}
 
 <p class="note">This runs on the server. <b>You can close this window</b> — it keeps going, pauses itself
 when the Claude quota window fills, and picks up where it left off. Nothing is written to Outline.</p>
