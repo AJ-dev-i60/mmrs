@@ -371,8 +371,34 @@ const listEvents = ({ importId, level, limit = 300, sinceId = 0 } = {}) => {
 const eventCounts = (importId) =>
   q(`SELECT level, COUNT(*) AS n FROM events WHERE import_id = ? GROUP BY level`).all(importId);
 
+/* ---------- reading what extraction produced ---------- */
+
+const allFindings = (importId, { type, limit = 500 } = {}) => {
+  const where = ['import_id = ?']; const args = [importId];
+  if (type && type !== 'all') { where.push('type = ?'); args.push(type); }
+  args.push(limit);
+  return q(`SELECT * FROM findings WHERE ${where.join(' AND ')}
+            ORDER BY confidence DESC, id ASC LIMIT ?`).all(...args);
+};
+
+const familyFindings = (importId, family) =>
+  q(`SELECT * FROM findings WHERE import_id=? AND family=? ORDER BY confidence DESC, id`).all(importId, family);
+
+const familyMarkers = (importId, family) =>
+  q(`SELECT * FROM markers WHERE import_id=? AND family=? ORDER BY turn`).all(importId, family);
+
+const familyExtraction = (importId, family) =>
+  q('SELECT * FROM extractions WHERE import_id=? AND family=?').get(importId, family) || null;
+
+const verdictCounts = (importId) =>
+  q(`SELECT verdict, COUNT(*) AS n FROM extractions WHERE import_id=? GROUP BY verdict`).all(importId);
+
+const allMarkers = (importId, limit = 400) =>
+  q(`SELECT * FROM markers WHERE import_id=? ORDER BY id DESC LIMIT ?`).all(importId, limit);
+
 module.exports = {
   open, q, now, DB_PATH, DATA_DIR,
+  allFindings, familyFindings, familyMarkers, familyExtraction, verdictCounts, allMarkers,
   logEvent, listEvents, eventCounts,
   claimNext, saveExtraction, releaseFamily, failFamily, releaseStale,
   extractionProgress, findingsSummary, recentExtractions, totals,

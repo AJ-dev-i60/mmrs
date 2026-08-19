@@ -166,6 +166,38 @@ border-radius:4px;background:var(--done-soft);color:var(--done)}
 tr.ev.err td{background:color-mix(in srgb,var(--fail) 6%,transparent)}
 tr.ev.warn td{background:color-mix(in srgb,var(--wait) 6%,transparent)}
 label.count{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.tabn{font-family:"IBM Plex Mono",monospace;font-size:11px;opacity:.65}
+.finding{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+box-shadow:var(--shadow);padding:16px 18px;margin:0 0 12px}
+.finding-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.ftitle{font-size:15px;font-weight:600;flex:1;min-width:200px;text-wrap:balance}
+.ftype{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;
+border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.ftype.project{background:var(--wait-soft);color:var(--wait)}
+.ftype.decision{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.ftype.study,.ftype.research{background:var(--done-soft);color:var(--done)}
+.ffam{font-size:12px;color:var(--ink-3);margin:0 0 10px}
+.fbody{font-family:"IBM Plex Serif",Georgia,serif;font-size:14.5px;line-height:1.65;
+color:var(--ink-2);max-width:76ch;margin-top:10px}
+.fbody p{margin:0 0 10px}.fbody p:last-child{margin-bottom:0}
+.fbody .mdh{font-family:"IBM Plex Sans",sans-serif;font-size:12.5px;font-weight:600;color:var(--ink);margin:14px 0 6px}
+.fbody ul,.fbody ol{margin:0 0 10px;padding-left:20px}
+.fbody code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--panel-2);padding:1.5px 5px;border-radius:4px}
+.fbody pre{background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:11px 13px;overflow-x:auto;margin:0 0 10px}
+.fbody pre code{background:none;padding:0;white-space:pre}
+.fbody .mdtw{overflow-x:auto;margin:0 0 10px}
+.fbody table{font-family:"IBM Plex Sans",sans-serif;font-size:13px}
+.fcite{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-top:12px;
+padding-top:9px;border-top:1px solid var(--line)}
+.oq{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-2)}
+.oq b{color:var(--ink);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.oq ul{margin:8px 0 0;padding-left:20px}.oq li{margin-bottom:5px}
+.marker{padding:11px 0;border-bottom:1px solid var(--line)}
+.marker:last-of-type{border-bottom:0}
+.mnote{font-size:13px;color:var(--ink);display:flex;gap:10px;align-items:baseline}
+.mturn{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-left:auto;white-space:nowrap}
+.mquote{font-family:"IBM Plex Serif",Georgia,serif;font-size:14px;line-height:1.55;color:var(--ink-2);
+margin-top:5px;padding-left:12px;border-left:2px solid var(--line-2);max-width:74ch}
 tr.fam td:first-child a{text-decoration:none;font-weight:500;color:var(--ink)}
 tr.fam td:first-child a:hover{color:var(--accent)}
 .era{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;
@@ -229,6 +261,7 @@ function frame(active, current, body) {
 <nav>
   <a href="/" ${active === 'dash' ? 'aria-current="page"' : ''}>Dashboard</a>
   <a href="/families" ${active === 'browse' ? 'aria-current="page"' : ''}>Archive</a>
+  <a href="/findings" ${active === 'findings' ? 'aria-current="page"' : ''}>Findings</a>
   <a href="/logs" ${active === 'logs' ? 'aria-current="page"' : ''}>Worker log</a>
   <a href="/import" ${active === 'import' ? 'aria-current="page"' : ''}>Import</a>
 </nav>
@@ -628,7 +661,7 @@ document.querySelectorAll('th.sortable').forEach(th=>th.addEventListener('click'
   return shell('MMRS — Your archive', frame('browse', {}, body), { script });
 }
 
-function familyPage({ family, detail, conversations, messages }) {
+function familyPage({ family, detail, conversations, messages, extraction, findings = [], markers = [] }) {
   // Message text is markdown, rendered by src/md.js — escaped first, so the
   // output can only contain tags that renderer emits.
   const byConv = new Map();
@@ -647,6 +680,18 @@ function familyPage({ family, detail, conversations, messages }) {
   const body = `<div class="topbar">
 <div><h1>${esc(family)}</h1><p class="sub">${n(detail.n_messages)} messages · ${n(detail.chars)} chars · ${esc(detail.first_seen)} → ${esc(detail.last_seen)}${detail.n_convos > 1 ? ` · folded from ${detail.n_convos} chats` : ''}</p></div>
 <div class="spacer"></div><a class="btn ghost sm" href="/families">Back to archive</a></div>
+
+${extraction ? `<div class="card" style="margin-bottom:16px"><div class="card-h"><h2>What was extracted</h2>
+<span class="count">${esc(extraction.verdict || '')} · ${n(findings.length)} findings · ${n(markers.length)} markers${
+  extraction.elapsed_ms ? ` · ${Math.round(extraction.elapsed_ms / 1000)}s` : ''}</span></div>
+<div class="card-b">
+${extraction.summary ? `<p style="margin:0 0 16px;font-family:'IBM Plex Serif',Georgia,serif;font-size:15px;line-height:1.6">${esc(extraction.summary)}</p>` : ''}
+${findings.length ? findings.map((f) => findingCard(f)).join('') : '<p class="sub" style="margin:0">No durable findings — the honest read for many threads.</p>'}
+${(() => { try { const oq = JSON.parse(extraction.open_questions || '[]');
+  return oq.length ? `<div class="oq"><b>Left unresolved</b><ul>${oq.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''; }
+  catch { return ''; } })()}
+</div></div>
+${markersBlock(markers)}` : ''}
 
 ${detail.n_convos > 1 ? `<div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Folded from ${detail.n_convos} chats</h2>
 <span class="count">${detail.redundancy_pct}% was duplicate</span></div><div class="card-b"><div class="tw"><table>
@@ -708,10 +753,61 @@ cb.addEventListener('change',arm); arm();`;
   return shell('MMRS — Worker log', frame('logs', {}, body), { script });
 }
 
+function findingCard(f, opts = {}) {
+  const cites = (() => { try { return JSON.parse(f.citations || '[]'); } catch { return []; } })();
+  return `<div class="finding">
+<div class="finding-h">
+  <span class="ftype ${esc(f.type)}">${esc(f.type)}</span>
+  <span class="ftitle">${esc(f.title)}</span>
+  <span class="conf" title="model's own confidence">${f.confidence == null ? '' : Number(f.confidence).toFixed(2)}</span>
+</div>
+${opts.showFamily ? `<div class="ffam">from <a href="/family/${encodeURIComponent(f.family)}">${esc(f.family)}</a></div>` : ''}
+<div class="fbody">${md.render(f.body)}</div>
+${cites.length ? `<div class="fcite">turns ${cites.map((c) => esc(String(c))).join(', ')}</div>` : ''}
+</div>`;
+}
+
+function findingsPage({ findings, counts, type, verdicts, totals }) {
+  const tab = (k, label, n2) => `<a class="tab ${type === k ? 'on' : ''}" href="/findings?type=${k}">${label}${
+    n2 == null ? '' : ` <span class="tabn">${n(n2)}</span>`}</a>`;
+  const byType = Object.fromEntries((counts || []).map((c) => [c.type, c.n]));
+  const order = ['method', 'reference', 'project', 'study', 'decision', 'research', 'howto'];
+
+  const body = `<div class="topbar">
+<div><h1>What it found</h1><p class="sub">${n(totals.findings)} findings and ${n(totals.markers)} markers
+from ${n(totals.extracted)} conversations read${verdicts.length ? ' · ' + verdicts.map((v) => `${n(v.n)} ${esc(v.verdict)}`).join(', ') : ''}</p></div>
+<div class="spacer"></div><a class="btn ghost sm" href="/">Dashboard</a></div>
+
+<div class="toolbar"><div class="tabs">${tab('all', 'All', totals.findings)}${
+  order.filter((t) => byType[t]).map((t) => tab(t, t, byType[t])).join('')}</div></div>
+
+${findings.length ? findings.map((f) => findingCard(f, { showFamily: true })).join('')
+  : `<div class="card"><div class="card-b"><p style="margin:0;color:var(--ink-3)">Nothing extracted yet.
+Start a run from the dashboard — <b>Test 5</b> reads five conversations and stops.</p></div></div>`}
+
+<p class="note">These are drafts. <b>Nothing here has been written to Outline</b> — proposing and approving
+is a later stage that does not exist yet. Confidence is the model's own, and is worth distrusting
+independently.</p>`;
+  return shell('MMRS — What it found', frame('findings', {}, body));
+}
+
+function markersBlock(markers) {
+  if (!markers.length) return '';
+  return `<div class="card" style="margin-bottom:16px"><div class="card-h"><h2>Markers</h2>
+<span class="count">${n(markers.length)} · for the later portrait pass, not published</span></div>
+<div class="card-b">
+${markers.map((m) => `<div class="marker">
+<div class="mnote">${esc(m.note || '')}<span class="mturn">turn ${m.turn == null ? '?' : m.turn}</span></div>
+<div class="mquote">${esc(m.quote)}</div></div>`).join('')}
+<p class="note">Observations, deliberately not conclusions. A pattern only exists across the whole archive,
+so nothing here claims anything on its own.</p>
+</div></div>`;
+}
+
 function notFound() {
   return shell('MMRS — not found', frame('dash', {}, `<div class="topbar"><div><h1>Nothing here</h1>
 <p class="sub">That path does not exist.</p></div></div>
 <div class="card"><div class="card-b"><a href="/">Back to the dashboard</a></div></div>`));
 }
 
-module.exports = { shell, esc, dashboard, importPage, scanPage, signin, unconfigured, notFound, familiesPage, familyPage, logsPage };
+module.exports = { shell, esc, dashboard, importPage, scanPage, signin, unconfigured, notFound, familiesPage, familyPage, logsPage, findingsPage };

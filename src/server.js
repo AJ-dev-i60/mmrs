@@ -170,6 +170,19 @@ const server = http.createServer(async (req, res) => {
 
     if (p === '/import') return send(res, 200, page.importPage({ error: url.searchParams.get('error') }));
 
+    if (p === '/findings') {
+      const latest = db.listImports().find((i) => i.status === 'ready');
+      if (!latest) return send(res, 404, page.notFound());
+      const type = url.searchParams.get('type') || 'all';
+      return send(res, 200, page.findingsPage({
+        type,
+        findings: db.allFindings(latest.id, { type }),
+        counts: db.findingsSummary(latest.id),
+        verdicts: db.verdictCounts(latest.id),
+        totals: db.totals(latest.id),
+      }));
+    }
+
     if (p === '/logs') {
       const latest = db.listImports().find((i) => i.status === 'ready');
       const level = url.searchParams.get('level') || 'all';
@@ -199,6 +212,9 @@ const server = http.createServer(async (req, res) => {
         family, detail,
         conversations: db.familyConversations(latest.id, family),
         messages: db.familyMessages(latest.id, family),
+        extraction: db.familyExtraction(latest.id, family),
+        findings: db.familyFindings(latest.id, family),
+        markers: db.familyMarkers(latest.id, family),
       }));
     }
 
