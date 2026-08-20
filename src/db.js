@@ -38,7 +38,8 @@ CREATE TABLE IF NOT EXISTS conversations (
   n_messages INTEGER,
   chars      INTEGER,
   starred    INTEGER DEFAULT 0,
-  archived   INTEGER DEFAULT 0
+  archived   INTEGER DEFAULT 0,
+  project_id TEXT                                  -- D16: ChatGPT Project, opaque g-p-... ID
 );
 
 CREATE TABLE IF NOT EXISTS families (
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS families (
   last_seen      TEXT,
   era            TEXT,
   redundancy_pct REAL,
+  projects       TEXT,                             -- D16: JSON array of project IDs
   PRIMARY KEY (import_id, family)
 );
 
@@ -171,6 +173,29 @@ CREATE INDEX IF NOT EXISTS idx_wq_status   ON work_queue(status, priority DESC);
 CREATE INDEX IF NOT EXISTS idx_fam_import  ON families(import_id);
 `;
 
+// Columns added after the first deploy. CREATE TABLE IF NOT EXISTS silently
+// does nothing on an existing database, so new columns need an explicit ALTER
+// or a volume that has already been written stays on the old shape forever.
+const ADDED_COLUMNS = [
+  ['conversations', 'project_id', 'TEXT'],
+  ['families', 'projects', 'TEXT'],
+];
+
+// Indexes over added columns CANNOT live in SCHEMA. On an existing database
+// SCHEMA runs first, so a CREATE INDEX there references a column that has not
+// been ALTERed in yet and the whole boot fails.
+const ADDED_INDEXES = [
+  'CREATE INDEX IF NOT EXISTS idx_conv_project ON conversations(import_id, project_id)',
+];
+
+function migrate(d) {
+  for (const [table, col, decl] of ADDED_COLUMNS) {
+    const have = d.prepare(`PRAGMA table_info(${table})`).all().some((c) => c.name === col);
+    if (!have) d.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${decl}`);
+  }
+  for (const sql of ADDED_INDEXES) d.exec(sql);
+}
+
 let db = null;
 
 function open() {
@@ -181,6 +206,7 @@ function open() {
   db.exec('PRAGMA foreign_keys = ON');
   db.exec('PRAGMA busy_timeout = 5000');
   db.exec(SCHEMA);
+  migrate(db);
   return db;
 }
 
@@ -214,7 +240,40 @@ const failImport = (id, message) => setStatus(id, 'failed', { error: String(mess
 
 /* ---------- corpus ---------- */
 
+// Everything extraction produced, plus the queue state that says it happened.
+// Used both by the reset control and by clearCorpus - findings whose family
+// rows have been deleted are orphans, so they go together.
+function clearExtractions(importId) {
+  for (const t of ['finding_tags', 'findings', 'markers', 'extractions', 'runs']) {
+    q(`DELETE FROM ${t} WHERE import_id = ?`).run(importId);
+  }
+}
+
+// Put every family back in the queue as if it had never been claimed.
+function requeueAll(importId) {
+  q(`UPDATE work_queue SET status = 'pending', claimed_at = NULL,
+        completed_at = NULL, attempts = 0, note = NULL
+     WHERE import_id = ?`).run(importId);
+}
+
+// Drop extraction output and requeue, keeping the corpus. This is the cheap
+// reset - re-importing to re-run a changed prompt would mean re-uploading and
+// re-normalising for no reason.
+function resetExtractions(importId) {
+  const before = q('SELECT COUNT(*) AS n FROM extractions WHERE import_id = ?').get(importId).n;
+  const d = open();
+  d.exec('BEGIN IMMEDIATE');
+  try {
+    clearExtractions(importId);
+    requeueAll(importId);
+    d.exec('COMMIT');
+  } catch (e) { d.exec('ROLLBACK'); throw e; }
+  const queued = q('SELECT COUNT(*) AS n FROM work_queue WHERE import_id = ?').get(importId).n;
+  return { cleared: before, requeued: queued };
+}
+
 function clearCorpus(importId) {
+  clearExtractions(importId);
   for (const t of ['messages', 'families', 'conversations', 'work_queue']) {
     q(`DELETE FROM ${t} WHERE import_id = ?`).run(importId);
   }
@@ -267,6 +326,18 @@ const monthHistogram = (importId) =>
   q(`SELECT substr(created,1,7) AS month, COUNT(*) AS n
      FROM conversations WHERE import_id = ? AND created IS NOT NULL
      GROUP BY month ORDER BY month`).all(importId);
+
+// D16 - what ChatGPT Projects are in this import, and which families they
+// cover. Ground truth for the clusterer: these groupings were made by hand.
+const projectSummary = (importId) =>
+  q(`SELECT project_id, COUNT(*) AS n_convos, COUNT(DISTINCT family) AS n_families,
+            SUM(chars) AS chars, MIN(created) AS first_seen, MAX(created) AS last_seen
+     FROM conversations WHERE import_id = ? AND project_id IS NOT NULL
+     GROUP BY project_id ORDER BY chars DESC`).all(importId);
+
+const projectFamilies = (importId, projectId) =>
+  q(`SELECT DISTINCT family FROM conversations
+     WHERE import_id = ? AND project_id = ? ORDER BY family`).all(importId, projectId);
 
 const eraSplit = (importId) =>
   q(`SELECT era, COUNT(*) AS n, SUM(est_tokens) AS tokens
@@ -464,5 +535,7 @@ module.exports = {
   allFamilies, familyDetail, familyConversations, familyMessages,
   monthHistogram, eraSplit,
   createImport, getImport, listImports, setStatus, saveScan, failImport,
-  clearCorpus, corpusStats, listFamilies, queueSummary,
+  clearCorpus, clearExtractions, resetExtractions, requeueAll,
+  corpusStats, listFamilies, queueSummary,
+  projectSummary, projectFamilies,
 };

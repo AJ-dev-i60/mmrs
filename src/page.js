@@ -109,6 +109,8 @@ font-family:inherit}
 .btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--line-2)}
 .btn.ghost:hover{background:var(--panel-2);color:var(--ink)}
 .btn.sm{padding:6px 13px;font-size:12.5px}
+.btn.danger{background:transparent;color:var(--fail);border:1px solid color-mix(in srgb,var(--fail) 40%,transparent)}
+.btn.danger:hover{background:var(--fail-soft);filter:none}
 .note{border-left:2px solid var(--accent);padding:2px 0 2px 14px;margin:18px 0 0;color:var(--ink-2);
 font-size:13px;line-height:1.55}
 .note.warn{border-color:var(--wait)}
@@ -432,13 +434,19 @@ when the Claude quota window fills, and picks up where it left off. Nothing is w
 
 function dashboard({ imports, stats, user, run }) {
   const latest = imports[0] || null;
+  const runningNow = Boolean(run && run.worker && run.worker.running);
+  const extracted = (run && run.totals && run.totals.extracted) || 0;
   const cur = latest ? {
     import: `${esc(latest.filename)} · ${mb(latest.bytes)}`, s1: 'done',
     scan: latest.scan_json ? `${JSON.parse(latest.scan_json).conversations} chats` : 'waiting',
     s2: latest.scan_json ? 'done' : (latest.status === 'scanning' ? 'active' : ''),
     norm: stats && stats.families ? `${n(stats.families)} families` : 'waiting',
     s3: stats && stats.families ? 'done' : (latest.status === 'normalising' ? 'active' : ''),
-    extract: stats && stats.families ? `0 / ${n(stats.families)}` : 'not built yet',
+    extract: stats && stats.families
+      ? `${n(extracted)} / ${n(stats.families)}`
+      : 'waiting',
+    s4: !stats || !stats.families ? ''
+      : runningNow ? 'active' : (extracted >= stats.families ? 'done' : ''),
   } : {};
 
   const body = `<div class="topbar">
@@ -495,12 +503,44 @@ ${imports.length ? `<div class="card" style="margin-top:14px"><div class="card-h
 ${imports.some((i) => i.error) ? `<p class="note warn"><b>Last error:</b> ${esc(imports.find((i) => i.error).error)}</p>` : ''}
 </div></div>` : ''}
 
+${stats && stats.projects && stats.projects.length ? `<div class="card" style="margin-top:14px">
+<div class="card-h"><h2>ChatGPT Projects</h2><span class="count">${n(stats.projects.length)} found</span></div><div class="card-b">
+<div class="tw"><table><thead><tr><th>Project</th><th class="n">Chats</th><th class="n">Families</th><th class="n">Chars</th><th>Span</th></tr></thead><tbody>
+${stats.projects.map((pr) => `<tr>
+<td><code style="font-size:11.5px">${esc(pr.project_id)}</code></td>
+<td class="n">${n(pr.n_convos)}</td><td class="n">${n(pr.n_families)}</td><td class="n">${n(pr.chars)}</td>
+<td style="font-size:11.5px;color:var(--ink-3)">${esc((pr.first_seen || '').slice(0, 10))} → ${esc((pr.last_seen || '').slice(0, 10))}</td>
+</tr>`).join('')}
+</tbody></table></div>
+<p class="note">Groupings you made by hand in ChatGPT, preserved through the export. The export carries the
+ID but <b>not the project's name</b>, so these are unlabelled — worth naming by eye. They are ground truth
+for the clusterer, and partial by design: plenty of related threads sit outside a project.</p>
+</div></div>` : ''}
+
+${latest ? `<div class="card" style="margin-top:14px"><div class="card-h"><h2>Danger zone</h2></div><div class="card-b">
+<details><summary style="cursor:pointer;font-size:13.5px;color:var(--ink-2)">Reset or delete this import</summary>
+<div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<form method="POST" action="/api/import/${esc(latest.id)}/reset" style="margin:0"
+  onsubmit="return confirm('Clear every finding, marker and extraction for this import and requeue all families?\n\nThe corpus itself is kept.')">
+<button class="btn danger sm" type="submit"${runningNow ? ' disabled' : ''}>Reset extractions</button></form>
+<span class="sub" style="margin:0">Drops findings, markers and extractions, then requeues every family. Keeps the corpus — use this after changing the prompt.</span>
+</div>
+<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+<form method="POST" action="/api/import/${esc(latest.id)}/delete" style="margin:0"
+  onsubmit="return confirm('Delete import ${esc(latest.id)} entirely?\n\nCorpus, findings, markers, event log and the uploaded file. This cannot be undone.')">
+<button class="btn danger sm" type="submit"${runningNow ? ' disabled' : ''}>Delete import</button></form>
+<span class="sub" style="margin:0">Removes everything including the uploaded archive. Use this before importing the real export.</span>
+</div>
+${runningNow ? '<p class="note warn" style="margin-top:12px">Both are disabled while the worker is running. Stop the run first.</p>' : ''}
+</details></div></div>` : ''}
+
 <p class="note">${stats && stats.families
-    ? `The corpus is built and every family is queued. <b>Extraction and review are not built yet</b> — nothing
-       has spent any Claude quota, and nothing has been written to Outline. In the meantime the archive is
-       readable: <a href="/families">browse it</a>.`
-    : `Extraction and review are not built yet. Everything before them is free and spends no Claude quota,
-       which is why it comes first.`}</p>`;
+    ? `The corpus is built and every family is queued. Extraction runs here and writes
+       <a href="/findings">findings</a> to this database — <b>nothing is written to Outline</b>. Staged
+       proposals and review are the next stage and are not built yet. The archive is readable meanwhile:
+       <a href="/families">browse it</a>.`
+    : `Import and scan are free and spend no Claude quota, which is why they come first. Extraction only
+       starts when you press Start.`}</p>`;
 
   const script = (run && run.worker && run.worker.running)
     ? `setInterval(async () => {

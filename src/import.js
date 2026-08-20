@@ -139,8 +139,12 @@ function proceed(id) {
   }
 }
 
+// Wipe an import completely: corpus, extraction output, event log, the DB row
+// and the unpacked files. clearCorpus already takes the extraction output with
+// it, so what is left is the log and the bytes on disk.
 function remove(id) {
   db.clearCorpus(id);
+  db.q('DELETE FROM events WHERE import_id = ?').run(id);
   db.q('DELETE FROM imports WHERE id = ?').run(id);
   fs.rmSync(dirFor(id), { recursive: true, force: true });
 }

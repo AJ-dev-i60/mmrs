@@ -102,6 +102,17 @@ function ts(epoch) {
 const day = (epoch) => { const t = ts(epoch); return t ? t.slice(0, 10) : null; };
 const era = (isoDate) => !isoDate ? 'unknown' : (isoDate.slice(0, 7) < ERA_BOUNDARY ? 'baseline' : 'primary');
 
+// D16 - ChatGPT Project membership survives the export, but only as an opaque
+// ID. `conversation_template_id` beginning `g-p-` is a Project; gizmo_type
+// 'snorlax' is OpenAI's internal name for the feature. The project's NAME is
+// not in the export, so this is grouping truth without a label - which is
+// exactly what the clusterer wants to be seeded with and checked against.
+const PROJECT_RE = /^g-p-[A-Za-z0-9_-]+$/;
+function projectOf(conv) {
+  const t = conv && conv.conversation_template_id;
+  return typeof t === 'string' && PROJECT_RE.test(t) ? t : null;
+}
+
 const roleOf = (m) => (m.author && m.author.role) || 'unknown';
 const modelOf = (m) => (m.metadata && m.metadata.model_slug) || null;
 const isHidden = (m) => Boolean(m.metadata && m.metadata.is_visually_hidden_from_conversation);
@@ -119,6 +130,7 @@ function survey(root) {
   const months = new Map();
   const perConvo = [];
   const idsSeen = new Set();
+  const projects = new Map();
   let dupChars = 0;
 
   for (const conv of convos) {
@@ -155,10 +167,21 @@ function survey(root) {
     mo.convos++; mo.chars += u + a;
     months.set(key, mo);
 
+    const project = projectOf(conv);
+    if (project) {
+      const pr = projects.get(project)
+        || { convos: 0, chars: 0, families: new Set(), first: null, last: null };
+      pr.convos++; pr.chars += u + a;
+      pr.families.add(familyOf(conv.title));
+      if (created && (!pr.first || created < pr.first)) pr.first = created;
+      if (created && (!pr.last || created > pr.last)) pr.last = created;
+      projects.set(project, pr);
+    }
+
     perConvo.push({
       id: conv.conversation_id, title: String(conv.title || '').trim(),
       family: familyOf(conv.title), isBranch: isBranch(conv.title),
-      created, msgs: msgs.length, chars: u + a,
+      created, msgs: msgs.length, chars: u + a, project,
     });
   }
 
@@ -197,6 +220,11 @@ function survey(root) {
     richCount: rich.length,
     richShare: totalChars ? +(100 * rich.reduce((s, c) => s + c.chars, 0) / totalChars).toFixed(1) : 0,
     branchFamilies: [...families.values()].filter((f) => f.convos > 1).length,
+    projects: Object.fromEntries([...projects]
+      .map(([id, p]) => [id, { convos: p.convos, chars: p.chars,
+        families: p.families.size, first: p.first, last: p.last }])
+      .sort((a, b) => b[1].chars - a[1].chars)),
+    projectConvos: [...projects.values()].reduce((s2, p) => s2 + p.convos, 0),
     roles: Object.fromEntries(roles),
     contentTypes: Object.fromEntries([...contentTypes].sort((a, b) => b[1] - a[1])),
     models: Object.fromEntries([...models].sort((a, b) => b[1] - a[1])),
@@ -223,6 +251,6 @@ function denseMonths(months, firstDate, lastDate) {
 
 module.exports = {
   charLen, findShards, load, flatten, mainline, denseMonths,
-  familyOf, isBranch, ts, day, era, roleOf, modelOf, isHidden, survey,
+  familyOf, isBranch, ts, day, era, roleOf, modelOf, isHidden, survey, projectOf,
   ERA_BOUNDARY,
 };

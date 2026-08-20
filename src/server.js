@@ -8,7 +8,7 @@ const imports = require('./import');
 const worker = require('./worker');
 
 const PORT = Number(process.env.PORT) || 3000;
-const VERSION = process.env.MMRS_VERSION || '0.6.0';
+const VERSION = process.env.MMRS_VERSION || '0.9.0';
 const COMMIT = (process.env.SOURCE_COMMIT || 'unknown').slice(0, 8);
 const STARTED = new Date();
 
@@ -40,6 +40,7 @@ function statsFor(importId) {
     queueByPriority: db.queueSummary(importId),
     era: db.eraSplit(importId),
     top: db.allFamilies(importId).slice(0, 8),
+    projects: db.projectSummary(importId),
   };
 }
 
@@ -113,8 +114,32 @@ const server = http.createServer(async (req, res) => {
       return wantsJson ? json(res, 200, { id: m[1], result }) : redirect(res, `/scan/${m[1]}`);
     }
 
+    // Destructive controls. Both refuse while the worker holds a claim -
+    // resetting the queue underneath a running extraction loses the family in
+    // flight and leaves a row stuck in 'running' forever.
+    if ((m = p.match(/^\/api\/import\/([\w-]+)\/reset$/)) && req.method === 'POST') {
+      if (worker.status().running) return json(res, 409, { error: 'Stop the run first' });
+      const r = db.resetExtractions(m[1]);
+      db.logEvent(m[1], 'warn', 'reset',
+        { detail: `extraction output cleared by operator - ${r.cleared} extraction(s) dropped, ${r.requeued} family/families requeued` });
+      const wantsJson = (req.headers.accept || '').includes('application/json');
+      return wantsJson ? json(res, 200, { id: m[1], ...r }) : redirect(res, '/');
+    }
+
+    // HTML forms cannot issue DELETE, so the button posts here.
+    if ((m = p.match(/^\/api\/import\/([\w-]+)\/delete$/)) && req.method === 'POST') {
+      if (worker.status().running) return json(res, 409, { error: 'Stop the run first' });
+      imports.remove(m[1]);
+      const wantsJson = (req.headers.accept || '').includes('application/json');
+      return wantsJson ? json(res, 200, { deleted: m[1] }) : redirect(res, '/');
+    }
+
     if ((m = p.match(/^\/api\/import\/([\w-]+)$/))) {
-      if (req.method === 'DELETE') { imports.remove(m[1]); return json(res, 200, { deleted: m[1] }); }
+      if (req.method === 'DELETE') {
+        if (worker.status().running) return json(res, 409, { error: 'Stop the run first' });
+        imports.remove(m[1]);
+        return json(res, 200, { deleted: m[1] });
+      }
       const rec = db.getImport(m[1]);
       if (!rec) return json(res, 404, { error: 'Unknown import' });
       return json(res, 200, { ...rec, scan_json: undefined, scan: rec.scan_json ? JSON.parse(rec.scan_json) : null });
