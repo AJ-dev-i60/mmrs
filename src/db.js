@@ -128,7 +128,6 @@ CREATE TABLE IF NOT EXISTS finding_tags (
   PRIMARY KEY (finding_id, tag)
 );
 CREATE INDEX IF NOT EXISTS idx_ftags ON finding_tags(import_id, tag);
-CREATE INDEX IF NOT EXISTS idx_fdom  ON findings(import_id, primary_domain);
 
 -- Observations, not conclusions. Read later, in bulk, by the portrait pass.
 CREATE TABLE IF NOT EXISTS markers (
@@ -176,15 +175,23 @@ CREATE INDEX IF NOT EXISTS idx_fam_import  ON families(import_id);
 // Columns added after the first deploy. CREATE TABLE IF NOT EXISTS silently
 // does nothing on an existing database, so new columns need an explicit ALTER
 // or a volume that has already been written stays on the old shape forever.
+// Every column added after a table first shipped, oldest first. CREATE TABLE
+// IF NOT EXISTS is a no-op on an existing table, so a column that only appears
+// in SCHEMA never reaches a database that already has that table.
 const ADDED_COLUMNS = [
-  ['conversations', 'project_id', 'TEXT'],
-  ['families', 'projects', 'TEXT'],
+  ['findings', 'domains', 'TEXT'],              // v0.8.0, D17
+  ['findings', 'primary_domain', 'TEXT'],       // v0.8.0, D17
+  ['findings', 'tags', 'TEXT'],                 // v0.8.0, D17
+  ['extractions', 'domains', 'TEXT'],           // v0.8.0, D17
+  ['conversations', 'project_id', 'TEXT'],      // v0.9.0, D16
+  ['families', 'projects', 'TEXT'],             // v0.9.0, D16
 ];
 
 // Indexes over added columns CANNOT live in SCHEMA. On an existing database
 // SCHEMA runs first, so a CREATE INDEX there references a column that has not
 // been ALTERed in yet and the whole boot fails.
 const ADDED_INDEXES = [
+  'CREATE INDEX IF NOT EXISTS idx_fdom ON findings(import_id, primary_domain)',
   'CREATE INDEX IF NOT EXISTS idx_conv_project ON conversations(import_id, project_id)',
 ];
 
@@ -201,12 +208,18 @@ let db = null;
 function open() {
   if (db) return db;
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  db = new DatabaseSync(DB_PATH);
-  db.exec('PRAGMA journal_mode = WAL');
-  db.exec('PRAGMA foreign_keys = ON');
-  db.exec('PRAGMA busy_timeout = 5000');
-  db.exec(SCHEMA);
-  migrate(db);
+  const d = new DatabaseSync(DB_PATH);
+  try {
+    d.exec('PRAGMA journal_mode = WAL');
+    d.exec('PRAGMA foreign_keys = ON');
+    d.exec('PRAGMA busy_timeout = 5000');
+    d.exec(SCHEMA);
+    migrate(d);
+  } catch (e) {
+    try { d.close(); } catch {}
+    throw new Error(`schema/migration failed: ${e.message}`);
+  }
+  db = d;                 // only once it is actually usable
   return db;
 }
 

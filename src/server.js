@@ -8,7 +8,7 @@ const imports = require('./import');
 const worker = require('./worker');
 
 const PORT = Number(process.env.PORT) || 3000;
-const VERSION = process.env.MMRS_VERSION || '0.9.0';
+const VERSION = process.env.MMRS_VERSION || '0.9.1';
 const COMMIT = (process.env.SOURCE_COMMIT || 'unknown').slice(0, 8);
 const STARTED = new Date();
 
